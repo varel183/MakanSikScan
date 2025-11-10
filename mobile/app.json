@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "MakanSikScan",
+    "slug": "makansik-scan",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#4CAF50"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.makansik.scan",
+      "jsEngine": "jsc"
+    },
+    "android": {
+      "package": "com.makansik.scan",
+      "permissions": ["CAMERA", "READ_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE"],
+      "jsEngine": "jsc"
+    },
+    "web": {
+      "bundler": "metro",
+      "favicon": "./assets/favicon.png"
+    },
+    "jsEngine": "jsc",
+    "experiments": {
+      "tsconfigPaths": true
+    }
+  }
+}
