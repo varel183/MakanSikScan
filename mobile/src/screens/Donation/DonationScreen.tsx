@@ -36,7 +36,7 @@ interface DonationStats {
 }
 
 export default function DonationScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const [activeTab, setActiveTab] = useState<"markets" | "history">("markets");
   const [markets, setMarkets] = useState<DonationMarket[]>([]);
   const [history, setHistory] = useState<DonationHistory[]>([]);
@@ -72,13 +72,15 @@ export default function DonationScreen() {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadData();
-    setRefreshing(false);
+    try {
+      await loadData();
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const handleSelectMarket = (market: DonationMarket) => {
-    // Navigate to food selection for donation
-    navigation.navigate("SelectFoodForDonation" as never, { market } as never);
+    navigation.navigate("SelectFoodForDonation", { market });
   };
 
   const renderMarketItem = ({ item }: { item: DonationMarket }) => (
@@ -179,36 +181,47 @@ export default function DonationScreen() {
         <TouchableOpacity
           className={`flex-1 py-4 items-center ${activeTab === "markets" ? "border-b-4 border-green-500" : ""}`}
           onPress={() => setActiveTab("markets")}>
-          <Text
-            className={activeTab === "markets" ? "text-sm font-bold text-green-500" : "text-sm font-medium text-gray-600"}>
+          <Text className={activeTab === "markets" ? "text-sm font-bold text-green-500" : "text-sm font-medium text-gray-600"}>
             Donation Centers
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
           className={`flex-1 py-4 items-center ${activeTab === "history" ? "border-b-4 border-green-500" : ""}`}
           onPress={() => setActiveTab("history")}>
-          <Text
-            className={activeTab === "history" ? "text-sm font-bold text-green-500" : "text-sm font-medium text-gray-600"}>
+          <Text className={activeTab === "history" ? "text-sm font-bold text-green-500" : "text-sm font-medium text-gray-600"}>
             My Donations
           </Text>
         </TouchableOpacity>
       </View>
 
       {/* Content */}
-      <FlatList
-        data={activeTab === "markets" ? markets : history}
-        renderItem={activeTab === "markets" ? renderMarketItem : renderHistoryItem}
-        keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={{ padding: 16 }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        ListEmptyComponent={
-          <View className="items-center justify-center py-12">
-            <Text className="text-sm text-gray-400">
-              {activeTab === "markets" ? "No donation centers available" : "No donation history yet"}
-            </Text>
-          </View>
-        }
-      />
+      {activeTab === "markets" ? (
+        <FlatList
+          data={markets}
+          renderItem={renderMarketItem}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={{ padding: 16 }}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          ListEmptyComponent={
+            <View className="items-center justify-center py-12">
+              <Text className="text-sm text-gray-400">No donation centers available</Text>
+            </View>
+          }
+        />
+      ) : (
+        <FlatList
+          data={history}
+          renderItem={renderHistoryItem}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={{ padding: 16 }}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          ListEmptyComponent={
+            <View className="items-center justify-center py-12">
+              <Text className="text-sm text-gray-400">No donation history yet</Text>
+            </View>
+          }
+        />
+      )}
     </View>
   );
 }

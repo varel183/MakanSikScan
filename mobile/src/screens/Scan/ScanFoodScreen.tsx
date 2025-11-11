@@ -154,7 +154,7 @@ export default function ScanFoodScreen({ navigation }: any) {
         // Show dialog asking if user wants to update existing stock
         setAdding(false);
         Alert.alert(
-          "Duplicate Food Found! 🔍",
+          "Duplicate Food Found!",
           `You already have "${scanResult.name}" in your storage.\n\nCurrent quantity: ${duplicateCheck.duplicates[0].quantity} ${duplicateCheck.duplicates[0].unit}\n\nWhat would you like to do?`,
           [
             {
@@ -344,15 +344,18 @@ export default function ScanFoodScreen({ navigation }: any) {
           <Image source={{ uri: imageUri }} className="w-full h-full" resizeMode="contain" />
           {scanning && (
             <View className="absolute top-0 left-0 right-0 bottom-0 bg-black/70 justify-center items-center">
-              <Scan size={48} color="#FFFFFF" className="mb-2" />
-              <Text className="text-2xl text-white font-semibold mb-2">🔍 Analyzing with AI...</Text>
-              <Text className="text-base text-white opacity-80">Gemini is identifying your food</Text>
+              <View className="mb-2">
+                <Scan size={48} color="#FFFFFF" />
+              </View>
+              <Text className="text-2xl text-white font-semibold mb-2">Analyzing...</Text>
             </View>
           )}
         </View>
       ) : (
         <View className="flex-1 justify-center items-center p-8">
-          <CameraIcon size={80} color={COLORS.textSecondary} className="mb-6" />
+          <View className="mb-6">
+            <CameraIcon size={80} color={COLORS.textSecondary} />
+          </View>
           <Text className="text-xl font-semibold text-gray-900 mb-3">Take a photo of your food</Text>
           <Text className="text-sm text-gray-600 text-center leading-5">
             AI will automatically detect name, category, expiry date, and nutrition facts
@@ -360,65 +363,67 @@ export default function ScanFoodScreen({ navigation }: any) {
         </View>
       )}
 
-      <View className="p-4 gap-3">
+      <View className="p-4 bg-white border-t border-gray-200">
         {scanResult ? (
-          <>
+          <View className="gap-3">
             <TouchableOpacity
-              className="flex-row items-center justify-center p-4 rounded-xl gap-2"
+              className="flex-row items-center justify-center py-4 px-6 rounded-xl"
               style={{ backgroundColor: COLORS.primary }}
               onPress={addToStorage}
               disabled={adding}>
               <Check size={24} color="#FFFFFF" />
-              <Text className="text-base font-semibold text-white">{adding ? "Adding..." : "Add to Storage"}</Text>
+              <Text className="text-base font-semibold text-white ml-2">{adding ? "Adding..." : "Add to Storage"}</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity className="p-4 rounded-xl border-2 border-gray-300" onPress={cancelScan} disabled={adding}>
+            <TouchableOpacity className="py-4 px-6 rounded-xl border-2 border-gray-300" onPress={cancelScan} disabled={adding}>
               <Text className="text-base font-semibold text-gray-900 text-center">Cancel</Text>
             </TouchableOpacity>
-          </>
+          </View>
         ) : imageUri && !scanning ? (
-          <>
+          <View className="gap-3">
             <TouchableOpacity
-              className="flex-row items-center justify-center bg-green-500 p-4 rounded-xl gap-2"
+              className="flex-row items-center justify-center py-4 px-6 rounded-xl"
+              style={{ backgroundColor: COLORS.success }}
               onPress={() => scanFood(imageUri)}>
               <Scan size={24} color="#FFFFFF" />
-              <Text className="text-base font-semibold text-white">Scan This Food</Text>
+              <Text className="text-base font-semibold text-white ml-2">Scan This Food</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity className="p-4 rounded-xl border-2 border-gray-300" onPress={() => setImageUri(null)}>
+            <TouchableOpacity className="py-4 px-6 rounded-xl border-2 border-gray-300" onPress={() => setImageUri(null)}>
               <Text className="text-base font-semibold text-gray-900 text-center">Retake Photo</Text>
             </TouchableOpacity>
-          </>
+          </View>
         ) : (
-          <>
+          <View className="gap-3">
             <TouchableOpacity
-              className="flex-row items-center justify-center p-4 rounded-xl gap-2 mb-5"
+              className="flex-row items-center justify-center py-4 px-6 rounded-xl"
               style={{ backgroundColor: COLORS.primary }}
               onPress={takePhoto}
               disabled={scanning}>
               <CameraIcon size={24} color="#FFFFFF" />
-              <Text className="text-base font-semibold text-white">
+              <Text className="text-base font-semibold text-white ml-2">
                 {Platform.OS === "web" ? "Camera (Not supported on web)" : "Take Photo"}
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              className="flex-row items-center justify-center bg-gray-600 p-4 rounded-xl gap-2 mb-3"
+              className="flex-row items-center justify-center py-4 px-6 rounded-xl"
+              style={{ backgroundColor: "#4B5563" }}
               onPress={pickImage}
               disabled={scanning}>
               <ImageIcon size={24} color="#FFFFFF" />
-              <Text className="text-base font-semibold text-white">
+              <Text className="text-base font-semibold text-white ml-2">
                 {Platform.OS === "web" ? "Upload Image" : "Choose from Gallery"}
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              className="p-4 rounded-xl border-2 border-gray-300"
+              className="py-4 px-6 rounded-xl border-2 border-gray-300"
               onPress={() => navigation.goBack()}
               disabled={scanning}>
               <Text className="text-base font-semibold text-gray-900 text-center">Cancel</Text>
             </TouchableOpacity>
-          </>
+          </View>
         )}
       </View>
     </View>

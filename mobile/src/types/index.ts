@@ -178,3 +178,54 @@ export interface DailyStats {
   total_fat: number;
   meal_count: number;
 }
+
+export interface Supermarket {
+  id: string;
+  name: string;
+  location: string;
+  address: string;
+  phone_number: string;
+  open_time: string;
+  close_time: string;
+  rating: number;
+  image_url?: string;
+}
+
+export interface SupermarketProduct {
+  id: string;
+  supermarket_id: string;
+  name: string;
+  category: string;
+  price: number;
+  unit: string;
+  stock: number;
+  image_url?: string;
+  description?: string;
+}
+
+export interface OrderItem {
+  id: string;
+  product_id: string;
+  product_name: string;
+  quantity: number;
+  unit: string;
+  price: number;
+  subtotal: number;
+}
+
+export interface Order {
+  id: string;
+  user_id: string;
+  supermarket_id: string;
+  supermarket_name: string;
+  order_number: string;
+  status: "pending_pickup" | "completed" | "cancelled";
+  total_amount: number;
+  discount_amount: number;
+  final_amount: number;
+  voucher_code?: string;
+  voucher_title?: string;
+  items: OrderItem[];
+  created_at: string;
+  picked_up_at?: string;
+}

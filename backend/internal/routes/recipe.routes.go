@@ -17,5 +17,13 @@ func RegisterRecipeRoutes(router *gin.RouterGroup, recipeHandler *handler.Recipe
 		recipes.GET("/search", recipeHandler.SearchRecipes)
 		recipes.GET("/dietary", recipeHandler.GetRecipesByDietary)
 		recipes.GET("/recommended", recipeHandler.GetRecommendedRecipes)
+
+		// Fetch directly from Yummy.co.id (no import/save)
+		recipes.GET("/yummy", recipeHandler.GetYummyRecipes)
+		recipes.GET("/yummy/:slug", recipeHandler.GetYummyRecipeDetail)
+
+		// Import from Yummy.co.id (save to database)
+		recipes.POST("/import/yummy/:slug", recipeHandler.ImportFromYummy)
+		recipes.POST("/import/yummy", recipeHandler.ImportMultipleFromYummy)
 	}
 }

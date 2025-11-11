@@ -2,17 +2,26 @@ import React, { useEffect, useState, useCallback } from "react";
 import { View, Text, FlatList, TouchableOpacity, RefreshControl, Alert } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { format } from "date-fns";
-import { Camera, Plus, AlertCircle } from "lucide-react-native";
+import { Camera, Plus } from "lucide-react-native";
 import apiService from "../../services/api";
 import { Food } from "../../types";
 import { COLORS } from "../../constants";
+import { Toast } from "../../components/Toast";
 
 export default function HomeScreen({ navigation }: any) {
   const [foods, setFoods] = useState<Food[]>([]);
-  const [expiringFoods, setExpiringFoods] = useState<Food[]>([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
   const [stats, setStats] = useState<any>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // Toast states
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const [toastType, setToastType] = useState<"success" | "error" | "warning" | "info">("info");
+  const [currentNotifIndex, setCurrentNotifIndex] = useState(0);
+  const [currentNotifId, setCurrentNotifId] = useState<string>("");
+  const [hasShownNotifications, setHasShownNotifications] = useState(false); // Track if we've shown notifications this session
 
   // Load data when screen comes into focus
   useFocusEffect(
@@ -26,19 +35,32 @@ export default function HomeScreen({ navigation }: any) {
     try {
       console.log("🔄 Loading home data...");
 
-      const [foodsData, expiringData, statsData] = await Promise.all([
+      const [foodsData, notificationsData, statsData] = await Promise.all([
         apiService.getFoods(1, 5),
-        apiService.getExpiringFoods(3),
+        apiService.getExpiringNotifications(),
         apiService.getFoodStats(),
       ]);
 
       console.log("Foods data:", foodsData);
-      console.log("Expiring data:", expiringData);
+      console.log("Notifications data:", notificationsData);
       console.log("Stats data:", statsData);
 
       setFoods(foodsData.foods || []);
-      setExpiringFoods(expiringData || []);
+      const notifs = notificationsData.notifications || [];
+      setNotifications(notifs);
       setStats(statsData);
+
+      // Show toast notifications only once per session (not on refresh)
+      if (notifs.length > 0 && !refreshing && !hasShownNotifications) {
+        // Show all notifications as stack (one by one with delay)
+        notifs.forEach((notif: any, index: number) => {
+          // Show notifications with delay to create stack effect
+          setTimeout(() => {
+            showNotificationToast(notif);
+          }, index * 5000); // 5 seconds delay between each notification
+        });
+        setHasShownNotifications(true);
+      }
     } catch (error: any) {
       console.error("Load data error:", error);
       console.error("Error response:", error.response?.data);
@@ -47,6 +69,28 @@ export default function HomeScreen({ navigation }: any) {
       setLoading(false);
       setRefreshing(false);
     }
+  };
+
+  const showNotificationToast = (notif: any) => {
+    const type = notif.severity === "critical" ? "error" : notif.severity === "warning" ? "warning" : "info";
+    setToastType(type);
+    setToastMessage(`${notif.title}: ${notif.message}`);
+    setCurrentNotifId(notif.id);
+    setToastVisible(true);
+  };
+
+  const handleToastHide = async () => {
+    // Mark notification as read when toast is dismissed
+    if (currentNotifId) {
+      try {
+        await apiService.markNotificationAsRead(currentNotifId);
+        console.log("✅ Notification marked as read:", currentNotifId);
+      } catch (error) {
+        console.error("Failed to mark notification as read:", error);
+      }
+    }
+    setToastVisible(false);
+    setCurrentNotifId("");
   };
 
   const onRefresh = () => {
@@ -99,6 +143,16 @@ export default function HomeScreen({ navigation }: any) {
 
   return (
     <View className="flex-1 bg-gray-50">
+      {/* Toast Notification */}
+      <Toast
+        visible={toastVisible}
+        message={toastMessage}
+        type={toastType}
+        duration={4000}
+        onHide={handleToastHide}
+        notificationId={currentNotifId}
+      />
+
       <FlatList
         data={foods}
         keyExtractor={(item) => item.id}
@@ -123,22 +177,6 @@ export default function HomeScreen({ navigation }: any) {
                 <Text className="text-xs text-white opacity-90">Expired</Text>
               </View>
             </View>
-
-            {/* Expiring Soon Alert */}
-            {expiringFoods.length > 0 && (
-              <View className="bg-orange-50 rounded-xl p-4 mb-4 border-l-4" style={{ borderLeftColor: COLORS.warning }}>
-                <View className="flex-row items-center mb-1">
-                  <AlertCircle size={20} color={COLORS.warning} />
-                  <Text className="text-base font-semibold text-gray-900 ml-2">Expiring Soon</Text>
-                </View>
-                <Text className="text-sm text-gray-600 mb-3">{expiringFoods.length} item(s) expiring in 3 days</Text>
-                <TouchableOpacity onPress={() => navigation.navigate("ExpiringFoods")}>
-                  <Text className="text-sm font-semibold" style={{ color: COLORS.warning }}>
-                    View All
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            )}
 
             {/* Section Title */}
             <View className="flex-row justify-between items-center mb-3">

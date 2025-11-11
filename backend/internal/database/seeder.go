@@ -76,6 +76,9 @@ func SeedAll() {
 	// Seed donation markets
 	SeedDonationMarkets()
 
+	// Seed supermarkets
+	SeedSupermarkets()
+
 	// Seed vouchers
 	if err := SeedVouchers(DB); err != nil {
 		log.Printf("Failed to seed vouchers: %v", err)

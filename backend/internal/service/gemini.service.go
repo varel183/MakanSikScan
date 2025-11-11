@@ -409,6 +409,11 @@ func (s *GeminiService) callGemini(prompt string) (string, error) {
 	return "", fmt.Errorf("response part bukanlah teks")
 }
 
+// GenerateContent is an alias for callGemini for external use
+func (s *GeminiService) GenerateContent(prompt string) (string, error) {
+	return s.callGemini(prompt)
+}
+
 // callGeminiVision - Helper untuk call Gemini Vision API dengan image menggunakan SDK
 func (s *GeminiService) callGeminiVision(prompt string, imageData string, mimeType string) (string, error) {
 	if s.genaiClient == nil {

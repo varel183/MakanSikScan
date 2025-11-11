@@ -1,8 +1,8 @@
 // API Configuration
 export const API_CONFIG = {
-  // BASE_URL: "http://10.32.101.119:5000/api/v1",
-  BASE_URL: "http://192.168.1.5:5000/api/v1",
-  TIMEOUT: 30000,
+  BASE_URL: "http://10.32.101.45:5000/api/v1",
+  // BASE_URL: "http://192.168.1.5:5000/api/v1",
+  TIMEOUT: 60000, // Increased to 60s for ingredient matching
 };
 
 // Storage Keys

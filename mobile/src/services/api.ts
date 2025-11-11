@@ -213,6 +213,33 @@ class ApiService {
     return data.data;
   }
 
+  async getYummyRecipes(limit = 20, matchIngredients = false): Promise<any[]> {
+    const { data } = await this.api.get<ApiResponse<any[]>>("/recipes/yummy", {
+      params: {
+        limit,
+        match_ingredients: matchIngredients,
+      },
+    });
+    return data.data;
+  }
+
+  async getYummyRecipeDetail(slug: string): Promise<any> {
+    const { data } = await this.api.get<ApiResponse<any>>(`/recipes/yummy/${slug}`);
+    return data.data;
+  }
+
+  async importRecipeFromYummy(slug: string): Promise<Recipe> {
+    const { data } = await this.api.post<ApiResponse<Recipe>>(`/recipes/import/yummy/${slug}`);
+    return data.data;
+  }
+
+  async importMultipleRecipesFromYummy(limit = 10): Promise<{ count: number; recipes: Recipe[] }> {
+    const { data } = await this.api.post<ApiResponse<{ count: number; recipes: Recipe[] }>>("/recipes/import/yummy", null, {
+      params: { limit },
+    });
+    return data.data;
+  }
+
   // ===== CART =====
   async getCart(): Promise<CartItem[]> {
     const { data } = await this.api.get<ApiResponse<CartItem[]>>("/cart");
@@ -322,6 +349,106 @@ class ApiService {
   async getDonationStats(): Promise<ApiResponse<any>> {
     const { data } = await this.api.get<ApiResponse<any>>("/donations/stats");
     return data;
+  }
+
+  // ===== NOTIFICATIONS =====
+  async getNotifications(): Promise<any> {
+    const { data } = await this.api.get<ApiResponse<any>>("/notifications");
+    return data.data;
+  }
+
+  async getExpiringNotifications(): Promise<any> {
+    const { data } = await this.api.get<ApiResponse<any>>("/notifications/expiring");
+    return data.data;
+  }
+
+  async markNotificationAsRead(notificationId: string): Promise<void> {
+    await this.api.post(`/notifications/${notificationId}/read`);
+  }
+
+  // ===== SUPERMARKET =====
+  async getSupermarkets(): Promise<any[]> {
+    const { data } = await this.api.get<ApiResponse<any[]>>("/supermarkets");
+    return data.data;
+  }
+
+  async getSupermarketById(id: string): Promise<any> {
+    const { data } = await this.api.get<ApiResponse<any>>(`/supermarkets/${id}`);
+    return data.data;
+  }
+
+  async getSupermarketProducts(supermarketId: string, category?: string): Promise<any[]> {
+    const { data } = await this.api.get<ApiResponse<any[]>>(`/supermarkets/${supermarketId}/products`, {
+      params: category ? { category } : {},
+    });
+    return data.data;
+  }
+
+  async searchProducts(query: string): Promise<any[]> {
+    const { data } = await this.api.get<ApiResponse<any[]>>("/supermarkets/products/search", {
+      params: { q: query },
+    });
+    return data.data;
+  }
+
+  async processPurchase(purchaseData: {
+    supermarket_id: string;
+    items: Array<{ product_id: string; quantity: number }>;
+  }): Promise<any> {
+    const { data } = await this.api.post<ApiResponse<any>>("/supermarkets/purchase", purchaseData);
+    return data.data;
+  }
+
+  async getUserTransactions(page = 1, limit = 20): Promise<any> {
+    const { data } = await this.api.get<ApiResponse<any>>("/supermarkets/transactions", {
+      params: { page, limit },
+    });
+    return data.data;
+  }
+
+  async getTransactionById(id: string): Promise<any> {
+    const { data } = await this.api.get<ApiResponse<any>>(`/supermarkets/transactions/${id}`);
+    return data.data;
+  }
+
+  // ===== ORDERS =====
+  async createOrder(orderData: {
+    supermarket_id: string;
+    supermarket_name: string;
+    items: Array<{
+      product_id: string;
+      product_name: string;
+      quantity: number;
+      unit: string;
+      price: number;
+      subtotal: number;
+    }>;
+    total_amount: number;
+    discount_amount: number;
+    final_amount: number;
+    voucher_code?: string;
+    voucher_title?: string;
+    redemption_id?: string;
+  }): Promise<any> {
+    const { data } = await this.api.post<ApiResponse<any>>("/orders", orderData);
+    return data.data;
+  }
+
+  async getUserOrders(status?: string): Promise<any[]> {
+    const { data } = await this.api.get<ApiResponse<any[]>>("/orders", {
+      params: status ? { status } : {},
+    });
+    return data.data;
+  }
+
+  async getOrderById(id: string): Promise<any> {
+    const { data } = await this.api.get<ApiResponse<any>>(`/orders/${id}`);
+    return data.data;
+  }
+
+  async confirmOrderPickup(orderId: string): Promise<any> {
+    const { data } = await this.api.post<ApiResponse<any>>(`/orders/${orderId}/pickup`);
+    return data.data;
   }
 }
 

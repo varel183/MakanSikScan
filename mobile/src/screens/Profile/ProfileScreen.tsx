@@ -1,6 +1,24 @@
 import React from "react";
 import { View, Text, ScrollView, TouchableOpacity, Alert } from "react-native";
-import { User, Mail, Lock, Bell, Moon, Globe, CheckCircle, Leaf, AlertTriangle, Info, FileText, Shield, HelpCircle, LogOut } from "lucide-react-native";
+import {
+  User,
+  Mail,
+  Lock,
+  Bell,
+  Moon,
+  Globe,
+  CheckCircle,
+  Leaf,
+  AlertTriangle,
+  Info,
+  FileText,
+  Shield,
+  HelpCircle,
+  LogOut,
+  ChefHat,
+  Store,
+  ShoppingBag,
+} from "lucide-react-native";
 import { useAuthStore } from "../../store/authStore";
 import { COLORS } from "../../constants";
 
@@ -22,6 +40,14 @@ export default function ProfileScreen({ navigation }: any) {
   };
 
   const profileSections = [
+    {
+      title: "Quick Access",
+      items: [
+        { icon: ShoppingBag, label: "My Orders", onPress: () => navigation.navigate("Orders") },
+        { icon: ChefHat, label: "Recipes", onPress: () => navigation.navigate("Recipes") },
+        { icon: Store, label: "Supermarkets", onPress: () => navigation.navigate("Market") },
+      ],
+    },
     {
       title: "Account",
       items: [
@@ -61,7 +87,9 @@ export default function ProfileScreen({ navigation }: any) {
     <ScrollView className="flex-1 bg-gray-50">
       <View className="p-8 items-center" style={{ backgroundColor: COLORS.primary }}>
         <View className="w-20 h-20 rounded-full bg-white justify-center items-center mb-4">
-          <Text className="text-4xl font-bold" style={{ color: COLORS.primary }}>{user?.name?.charAt(0).toUpperCase() || "?"}</Text>
+          <Text className="text-4xl font-bold" style={{ color: COLORS.primary }}>
+            {user?.name?.charAt(0).toUpperCase() || "?"}
+          </Text>
         </View>
         <Text className="text-2xl font-bold text-white mb-1">{user?.name || "User"}</Text>
         <Text className="text-sm text-white opacity-90">{user?.email}</Text>
@@ -76,7 +104,9 @@ export default function ProfileScreen({ navigation }: any) {
               return (
                 <TouchableOpacity
                   key={itemIndex}
-                  className={`flex-row justify-between items-center p-4 ${itemIndex !== section.items.length - 1 ? "border-b border-gray-100" : ""}`}
+                  className={`flex-row justify-between items-center p-4 ${
+                    itemIndex !== section.items.length - 1 ? "border-b border-gray-100" : ""
+                  }`}
                   onPress={item.onPress}
                   disabled={!item.onPress}>
                   <View className="flex-row items-center flex-1">

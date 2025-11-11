@@ -4,7 +4,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { StatusBar } from "expo-status-bar";
 import { View, Text, ActivityIndicator } from "react-native";
-import { Home, Heart, ChefHat, ShoppingCart, Gift, User } from "lucide-react-native";
+import { Home, Heart, Gift, User } from "lucide-react-native";
 
 // Store
 import { useAuthStore } from "./src/store/authStore";
@@ -17,7 +17,10 @@ import RegisterScreen from "./src/screens/Auth/RegisterScreen";
 import HomeScreen from "./src/screens/Home/HomeScreen";
 import DonationScreen from "./src/screens/Donation/DonationScreen";
 import RecipeScreen from "./src/screens/Recipe/RecipeScreen";
-import CartScreen from "./src/screens/Cart/CartScreen";
+import MarketScreen from "./src/screens/Cart/MarketScreen";
+import SupermarketDetailScreen from "./src/screens/Cart/SupermarketDetailScreen";
+import CheckoutScreen from "./src/screens/Cart/CheckoutScreen";
+import OrdersScreen from "./src/screens/Cart/OrdersScreen";
 import RewardsScreen from "./src/screens/Rewards/RewardsScreen";
 
 // Additional Screens (will be created)
@@ -68,22 +71,6 @@ function MainTabs() {
         }}
       />
       <Tab.Screen
-        name="Recipes"
-        component={RecipeScreen}
-        options={{
-          title: "Recipes",
-          tabBarIcon: ({ color }) => <ChefHat size={24} color={color} />,
-        }}
-      />
-      <Tab.Screen
-        name="Cart"
-        component={CartScreen}
-        options={{
-          title: "Cart",
-          tabBarIcon: ({ color }) => <ShoppingCart size={24} color={color} />,
-        }}
-      />
-      <Tab.Screen
         name="Rewards"
         component={RewardsScreen}
         options={{
@@ -122,7 +109,12 @@ function MainStack() {
       <Stack.Screen name="AddFoodManually" component={AddFoodManuallyScreen} options={{ title: "Add Food Manually" }} />
       <Stack.Screen name="AllFoods" component={AllFoodsScreen} options={{ title: "All Foods" }} />
       <Stack.Screen name="FoodDetail" component={FoodDetailScreen} options={{ title: "Food Detail" }} />
+      <Stack.Screen name="Recipes" component={RecipeScreen} options={{ title: "Recipes" }} />
       <Stack.Screen name="RecipeDetail" component={RecipeDetailScreen} options={{ title: "Recipe" }} />
+      <Stack.Screen name="Market" component={MarketScreen} options={{ title: "Supermarkets" }} />
+      <Stack.Screen name="SupermarketDetail" component={SupermarketDetailScreen} options={{ title: "Shop Products" }} />
+      <Stack.Screen name="Checkout" component={CheckoutScreen} options={{ title: "Checkout" }} />
+      <Stack.Screen name="Orders" component={OrdersScreen} options={{ title: "My Orders" }} />
       <Stack.Screen
         name="SelectFoodForDonation"
         component={SelectFoodForDonationScreen}

@@ -49,6 +49,13 @@ func Migrate() error {
 		&models.PointTransaction{},
 		&models.Voucher{},
 		&models.VoucherRedemption{},
+		&models.NotificationRead{},
+		&models.Supermarket{},
+		&models.SupermarketProduct{},
+		&models.Transaction{},
+		&models.TransactionItem{},
+		&models.Order{},
+		&models.OrderItem{},
 	)
 
 	if err != nil {

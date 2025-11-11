@@ -35,9 +35,9 @@ func (r *RecipeRepository) FindByID(id uuid.UUID) (*models.Recipe, error) {
 }
 
 // FindByExternalID finds recipe by external API ID
-func (r *RecipeRepository) FindByExternalID(externalID, source string) (*models.Recipe, error) {
+func (r *RecipeRepository) FindByExternalID(externalID string) (*models.Recipe, error) {
 	var recipe models.Recipe
-	err := r.db.Where("external_id = ? AND source = ?", externalID, source).First(&recipe).Error
+	err := r.db.Where("external_id = ?", externalID).First(&recipe).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil

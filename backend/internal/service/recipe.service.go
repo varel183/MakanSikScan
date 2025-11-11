@@ -41,14 +41,16 @@ type RecipeService struct {
 	recipeRepo    *repository.RecipeRepository
 	foodRepo      *repository.FoodRepository
 	geminiService *GeminiService
+	yummyService  *YummyService
 	config        *config.Config
 }
 
-func NewRecipeService(recipeRepo *repository.RecipeRepository, foodRepo *repository.FoodRepository, cfg *config.Config) *RecipeService {
+func NewRecipeService(recipeRepo *repository.RecipeRepository, foodRepo *repository.FoodRepository, yummyService *YummyService, cfg *config.Config) *RecipeService {
 	return &RecipeService{
 		recipeRepo:    recipeRepo,
 		foodRepo:      foodRepo,
 		geminiService: NewGeminiService(cfg),
+		yummyService:  yummyService,
 		config:        cfg,
 	}
 }
@@ -181,7 +183,7 @@ func (s *RecipeService) GetRecommendedRecipes(
 		externalID := fmt.Sprintf("gemini-%s", strings.ToLower(strings.ReplaceAll(geminiRecipe.Title, " ", "-")))
 
 		// Check if recipe already exists
-		existingRecipe, _ := s.recipeRepo.FindByExternalID(externalID, "gemini")
+		existingRecipe, _ := s.recipeRepo.FindByExternalID(externalID)
 		if existingRecipe != nil {
 			// Recipe already exists, use it instead of creating new one
 			responses = append(responses, *s.toRecipeResponse(existingRecipe))
@@ -290,4 +292,30 @@ func (s *RecipeService) toRecipeResponse(recipe *models.Recipe) *RecipeResponse 
 		Source:       source,
 		CreatedAt:    recipe.CreatedAt,
 	}
+}
+
+// GetRecommendedRecipesFromYummy gets top 5 recipes from Yummy API based on ingredient matching
+func (s *RecipeService) GetRecommendedRecipesFromYummy(userID uuid.UUID, limit int) ([]map[string]interface{}, error) {
+	// Get user's food items (use FindByUser with pagination)
+	foods, _, err := s.foodRepo.FindByUser(userID, 1, 1000)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user foods: %w", err)
+	}
+
+	// Extract food names for matching
+	foodNames := make([]string, 0)
+	for _, food := range foods {
+		if food.Quantity > 0 { // Only include foods in stock
+			foodNames = append(foodNames, food.Name)
+		}
+	}
+
+	// Use YummyService's optimized ingredient matching
+	// This will return top 5 recipes based on best match or random if no match
+	recipes, err := s.yummyService.FetchRecipesWithIngredientMatch(5, foodNames)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch recipes from Yummy: %w", err)
+	}
+
+	return recipes, nil
 }
