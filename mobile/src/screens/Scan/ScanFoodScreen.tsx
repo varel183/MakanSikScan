@@ -1,14 +1,32 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Alert, Image, Platform } from "react-native";
+import { View, Text, TouchableOpacity, Alert, Image, Platform, ScrollView } from "react-native";
 import * as ImagePicker from "expo-image-picker";
-import * as FileSystem from "expo-file-system";
+import { readAsStringAsync, EncodingType } from "expo-file-system/legacy";
 import { Camera } from "expo-camera";
+import { Camera as CameraIcon, Image as ImageIcon, X, Check, Scan } from "lucide-react-native";
 import apiService from "../../services/api";
 import { COLORS } from "../../constants";
+
+interface ScanResult {
+  name: string;
+  category: string;
+  image_url: string;
+  purchase_date: string;
+  expiry_date: string | null;
+  location: string;
+  is_halal: boolean | null;
+  calories: number | null;
+  protein: number | null;
+  carbs: number | null;
+  fat: number | null;
+  confidence: number;
+}
 
 export default function ScanFoodScreen({ navigation }: any) {
   const [scanning, setScanning] = useState(false);
   const [imageUri, setImageUri] = useState<string | null>(null);
+  const [scanResult, setScanResult] = useState<ScanResult | null>(null);
+  const [adding, setAdding] = useState(false);
 
   const requestCameraPermission = async () => {
     // On web, camera permission is handled by browser
@@ -49,7 +67,7 @@ export default function ScanFoodScreen({ navigation }: any) {
 
     try {
       const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ["images"],
         allowsEditing: true,
         aspect: [4, 3],
         quality: 0.8,
@@ -66,7 +84,7 @@ export default function ScanFoodScreen({ navigation }: any) {
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ["images"],
       allowsEditing: true,
       aspect: [4, 3],
       quality: 0.8,
@@ -83,101 +101,322 @@ export default function ScanFoodScreen({ navigation }: any) {
     try {
       console.log("📷 Converting image to base64...");
 
-      // Convert image to base64
-      const base64 = await FileSystem.readAsStringAsync(uri, {
-        encoding: "base64",
+      // Convert image to base64 using legacy API
+      const base64 = await readAsStringAsync(uri, {
+        encoding: EncodingType.Base64,
       });
 
-      console.log("✅ Base64 conversion complete, size:", base64.length);
+      console.log("Base64 conversion complete, size:", base64.length);
 
-      // Send base64 image to backend
-      const scanResult = await apiService.scanFood({
+      // Send base64 image to backend for scanning
+      const result = await apiService.scanFood({
         image_base64: base64,
         location: "Refrigerator",
       } as any);
 
-      // Check if we have a valid ID
-      if (!scanResult.id) {
-        throw new Error("Invalid food ID received from server");
+      console.log("Scan result received:", JSON.stringify(result, null, 2));
+      console.log("📊 Result type:", typeof result);
+      console.log("📊 Result keys:", result ? Object.keys(result) : "null");
+
+      if (!result) {
+        throw new Error("No data received from server");
+      }
+
+      // Verify required fields
+      if (!result.name) {
+        console.error("Missing name field in result");
+      }
+      if (!result.category) {
+        console.error("Missing category field in result");
       }
 
       setScanning(false);
+      setScanResult(result);
+    } catch (error: any) {
+      console.error("Scan error:", error);
+      console.error("Error response:", error.response?.data);
+      Alert.alert("Scan Failed", error.response?.data?.error || error.message || "Failed to scan food");
+      setScanning(false);
+      setScanResult(null);
+    }
+  };
+
+  const addToStorage = async () => {
+    if (!scanResult) return;
+
+    setAdding(true);
+    try {
+      // Check for duplicates first
+      console.log("🔍 Checking for duplicates...");
+      const duplicateCheck = await apiService.checkDuplicate(scanResult.name);
+
+      if (duplicateCheck.has_duplicates && duplicateCheck.duplicates.length > 0) {
+        // Show dialog asking if user wants to update existing stock
+        setAdding(false);
+        Alert.alert(
+          "Duplicate Food Found! 🔍",
+          `You already have "${scanResult.name}" in your storage.\n\nCurrent quantity: ${duplicateCheck.duplicates[0].quantity} ${duplicateCheck.duplicates[0].unit}\n\nWhat would you like to do?`,
+          [
+            {
+              text: "Add New Item",
+              onPress: () => addNewFood(),
+            },
+            {
+              text: "Update Stock",
+              onPress: () => updateExistingStock(duplicateCheck.duplicates[0]),
+            },
+            {
+              text: "Cancel",
+              style: "cancel",
+            },
+          ]
+        );
+        return;
+      }
+
+      // No duplicates, add new
+      await addNewFood();
+    } catch (error: any) {
+      console.error("Add error:", error);
+      Alert.alert("Add Failed", error.response?.data?.error || error.message || "Failed to add food to storage");
+      setAdding(false);
+    }
+  };
+
+  const addNewFood = async () => {
+    if (!scanResult) return;
+
+    setAdding(true);
+    try {
+      // Add scanned food to storage
+      const addedFood = await apiService.addScannedFood({
+        name: scanResult.name,
+        category: scanResult.category,
+        quantity: 1,
+        unit: "piece",
+        image_url: scanResult.image_url,
+        purchase_date: scanResult.purchase_date,
+        expiry_date: scanResult.expiry_date,
+        location: scanResult.location,
+        is_halal: scanResult.is_halal,
+        calories: scanResult.calories,
+        protein: scanResult.protein,
+        carbs: scanResult.carbs,
+        fat: scanResult.fat,
+      });
+
+      setAdding(false);
       setImageUri(null);
+      setScanResult(null);
+
+      Alert.alert("Success! 🎉", `${scanResult.name} has been added to your storage!\n\n+10 Points Earned!`, [
+        {
+          text: "View in Storage",
+          onPress: () => navigation.navigate("Home"),
+        },
+        {
+          text: "OK",
+        },
+      ]);
+    } catch (error: any) {
+      console.error("Add error:", error);
+      Alert.alert("Add Failed", error.response?.data?.error || error.message || "Failed to add food to storage");
+      setAdding(false);
+    }
+  };
+
+  const updateExistingStock = async (existingFood: any) => {
+    if (!scanResult) return;
+
+    setAdding(true);
+    try {
+      // Update stock of existing food
+      const updatedFood = await apiService.updateStock(existingFood.id, 1);
+
+      setAdding(false);
+      setImageUri(null);
+      setScanResult(null);
 
       Alert.alert(
-        "Food Scanned! 🎉",
-        `Name: ${scanResult.name}\nCategory: ${scanResult.category}\nCalories: ${
-          scanResult.calories || "N/A"
-        } kcal\n\n+10 Points Earned!`,
+        "Stock Updated! ✅",
+        `${scanResult.name} stock updated!\n\nNew quantity: ${updatedFood.quantity} ${updatedFood.unit}\n\n+10 Points Earned!`,
         [
           {
-            text: "View Detail",
-            onPress: () => navigation.navigate("FoodDetail", { foodId: scanResult.id }),
+            text: "View in Storage",
+            onPress: () => navigation.navigate("Home"),
           },
           {
             text: "OK",
-            onPress: () => navigation.navigate("Home"),
           },
         ]
       );
     } catch (error: any) {
-      console.error("Scan error:", error);
-      Alert.alert("Scan Failed", error.response?.data?.message || error.message || "Failed to scan food");
-      setScanning(false);
+      console.error("Update stock error:", error);
+      Alert.alert("Update Failed", error.response?.data?.error || error.message || "Failed to update stock");
+      setAdding(false);
     }
   };
 
+  const cancelScan = () => {
+    setImageUri(null);
+    setScanResult(null);
+  };
+
   return (
-    <View style={styles.container}>
-      {imageUri ? (
-        <View style={styles.previewContainer}>
-          <Image source={{ uri: imageUri }} style={styles.preview} />
+    <View className="flex-1 bg-gray-50">
+      {scanResult ? (
+        // Show scan result
+        <ScrollView className="flex-1 p-4">
+          <View className="mb-4 items-center">
+            <Text className="text-2xl font-bold text-gray-900 mb-2">Scan Result</Text>
+            <Text className="text-base font-semibold" style={{ color: COLORS.primary }}>
+              Confidence: {((scanResult.confidence || 0) * 100).toFixed(1)}%
+            </Text>
+          </View>
+
+          {imageUri && <Image source={{ uri: imageUri }} className="w-full h-50 rounded-xl mb-4" resizeMode="cover" />}
+
+          <View className="bg-white rounded-xl p-4 gap-3">
+            <View className="flex-row justify-between py-2 border-b border-gray-200">
+              <Text className="text-sm text-gray-600 font-medium">Name:</Text>
+              <Text className="text-sm text-gray-900 font-semibold">{scanResult.name || "Unknown"}</Text>
+            </View>
+            <View className="flex-row justify-between py-2 border-b border-gray-200">
+              <Text className="text-sm text-gray-600 font-medium">Category:</Text>
+              <Text className="text-sm text-gray-900 font-semibold">{scanResult.category || "Unknown"}</Text>
+            </View>
+            <View className="flex-row justify-between py-2 border-b border-gray-200">
+              <Text className="text-sm text-gray-600 font-medium">Location:</Text>
+              <Text className="text-sm text-gray-900 font-semibold">{scanResult.location || "Refrigerator"}</Text>
+            </View>
+
+            {scanResult.expiry_date && (
+              <View className="flex-row justify-between py-2 border-b border-gray-200">
+                <Text className="text-sm text-gray-600 font-medium">Expiry Date:</Text>
+                <Text className="text-sm text-gray-900 font-semibold">
+                  {new Date(scanResult.expiry_date).toLocaleDateString()}
+                </Text>
+              </View>
+            )}
+
+            {scanResult.calories !== null && scanResult.calories !== undefined && (
+              <View className="mt-3 pt-3 border-t-2 border-gray-200">
+                <Text className="text-base font-bold text-gray-900 mb-3">Nutrition (per 100g)</Text>
+                <View className="flex-row flex-wrap gap-3">
+                  <View className="flex-1 min-w-[45%] bg-gray-50 p-3 rounded-lg items-center">
+                    <Text className="text-xs text-gray-600 mb-1">Calories</Text>
+                    <Text className="text-base font-bold" style={{ color: COLORS.primary }}>
+                      {scanResult.calories || 0} kcal
+                    </Text>
+                  </View>
+                  <View className="flex-1 min-w-[45%] bg-gray-50 p-3 rounded-lg items-center">
+                    <Text className="text-xs text-gray-600 mb-1">Protein</Text>
+                    <Text className="text-base font-bold" style={{ color: COLORS.primary }}>
+                      {scanResult.protein || 0}g
+                    </Text>
+                  </View>
+                  <View className="flex-1 min-w-[45%] bg-gray-50 p-3 rounded-lg items-center">
+                    <Text className="text-xs text-gray-600 mb-1">Carbs</Text>
+                    <Text className="text-base font-bold" style={{ color: COLORS.primary }}>
+                      {scanResult.carbs || 0}g
+                    </Text>
+                  </View>
+                  <View className="flex-1 min-w-[45%] bg-gray-50 p-3 rounded-lg items-center">
+                    <Text className="text-xs text-gray-600 mb-1">Fat</Text>
+                    <Text className="text-base font-bold" style={{ color: COLORS.primary }}>
+                      {scanResult.fat || 0}g
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            )}
+
+            {scanResult.is_halal !== null && scanResult.is_halal !== undefined && (
+              <View className="flex-row justify-between py-2">
+                <Text className="text-sm text-gray-600 font-medium">Halal:</Text>
+                <Text className="text-sm text-gray-900 font-semibold">{scanResult.is_halal ? "Yes" : "No"}</Text>
+              </View>
+            )}
+          </View>
+        </ScrollView>
+      ) : imageUri ? (
+        <View className="flex-1 relative">
+          <Image source={{ uri: imageUri }} className="w-full h-full" resizeMode="contain" />
           {scanning && (
-            <View style={styles.scanningOverlay}>
-              <Text style={styles.scanningText}>🔍 Analyzing with AI...</Text>
-              <Text style={styles.scanningSubtext}>Gemini is identifying your food</Text>
+            <View className="absolute top-0 left-0 right-0 bottom-0 bg-black/70 justify-center items-center">
+              <Scan size={48} color="#FFFFFF" className="mb-2" />
+              <Text className="text-2xl text-white font-semibold mb-2">🔍 Analyzing with AI...</Text>
+              <Text className="text-base text-white opacity-80">Gemini is identifying your food</Text>
             </View>
           )}
         </View>
       ) : (
-        <View style={styles.placeholder}>
-          <Text style={styles.placeholderIcon}>📸</Text>
-          <Text style={styles.placeholderText}>Take a photo of your food</Text>
-          <Text style={styles.placeholderSubtext}>
+        <View className="flex-1 justify-center items-center p-8">
+          <CameraIcon size={80} color={COLORS.textSecondary} className="mb-6" />
+          <Text className="text-xl font-semibold text-gray-900 mb-3">Take a photo of your food</Text>
+          <Text className="text-sm text-gray-600 text-center leading-5">
             AI will automatically detect name, category, expiry date, and nutrition facts
           </Text>
         </View>
       )}
 
-      <View style={styles.actions}>
-        {imageUri && !scanning ? (
+      <View className="p-4 gap-3">
+        {scanResult ? (
           <>
-            <TouchableOpacity style={[styles.button, styles.scanButton]} onPress={() => scanFood(imageUri)}>
-              <Text style={styles.buttonIcon}>🔍</Text>
-              <Text style={styles.buttonText}>Scan This Food</Text>
+            <TouchableOpacity
+              className="flex-row items-center justify-center p-4 rounded-xl gap-2"
+              style={{ backgroundColor: COLORS.primary }}
+              onPress={addToStorage}
+              disabled={adding}>
+              <Check size={24} color="#FFFFFF" />
+              <Text className="text-base font-semibold text-white">{adding ? "Adding..." : "Add to Storage"}</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={[styles.button, styles.outlineButton]} onPress={() => setImageUri(null)}>
-              <Text style={styles.outlineButtonText}>Retake Photo</Text>
+            <TouchableOpacity className="p-4 rounded-xl border-2 border-gray-300" onPress={cancelScan} disabled={adding}>
+              <Text className="text-base font-semibold text-gray-900 text-center">Cancel</Text>
+            </TouchableOpacity>
+          </>
+        ) : imageUri && !scanning ? (
+          <>
+            <TouchableOpacity
+              className="flex-row items-center justify-center bg-green-500 p-4 rounded-xl gap-2"
+              onPress={() => scanFood(imageUri)}>
+              <Scan size={24} color="#FFFFFF" />
+              <Text className="text-base font-semibold text-white">Scan This Food</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity className="p-4 rounded-xl border-2 border-gray-300" onPress={() => setImageUri(null)}>
+              <Text className="text-base font-semibold text-gray-900 text-center">Retake Photo</Text>
             </TouchableOpacity>
           </>
         ) : (
           <>
-            <TouchableOpacity style={[styles.button, styles.primaryButton]} onPress={takePhoto} disabled={scanning}>
-              <Text style={styles.buttonIcon}>📷</Text>
-              <Text style={styles.buttonText}>{Platform.OS === "web" ? "Camera (Not supported on web)" : "Take Photo"}</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={[styles.button, styles.secondaryButton]} onPress={pickImage} disabled={scanning}>
-              <Text style={styles.buttonIcon}>🖼️</Text>
-              <Text style={styles.buttonText}>{Platform.OS === "web" ? "Upload Image" : "Choose from Gallery"}</Text>
+            <TouchableOpacity
+              className="flex-row items-center justify-center p-4 rounded-xl gap-2 mb-5"
+              style={{ backgroundColor: COLORS.primary }}
+              onPress={takePhoto}
+              disabled={scanning}>
+              <CameraIcon size={24} color="#FFFFFF" />
+              <Text className="text-base font-semibold text-white">
+                {Platform.OS === "web" ? "Camera (Not supported on web)" : "Take Photo"}
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.button, styles.outlineButton]}
+              className="flex-row items-center justify-center bg-gray-600 p-4 rounded-xl gap-2 mb-3"
+              onPress={pickImage}
+              disabled={scanning}>
+              <ImageIcon size={24} color="#FFFFFF" />
+              <Text className="text-base font-semibold text-white">
+                {Platform.OS === "web" ? "Upload Image" : "Choose from Gallery"}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              className="p-4 rounded-xl border-2 border-gray-300"
               onPress={() => navigation.goBack()}
               disabled={scanning}>
-              <Text style={styles.outlineButtonText}>Cancel</Text>
+              <Text className="text-base font-semibold text-gray-900 text-center">Cancel</Text>
             </TouchableOpacity>
           </>
         )}
@@ -185,101 +424,3 @@ export default function ScanFoodScreen({ navigation }: any) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  previewContainer: {
-    flex: 1,
-    position: "relative",
-  },
-  preview: {
-    width: "100%",
-    height: "100%",
-    resizeMode: "contain",
-  },
-  scanningOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0,0,0,0.7)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  scanningText: {
-    fontSize: 24,
-    color: "#FFFFFF",
-    fontWeight: "600",
-    marginBottom: 8,
-  },
-  scanningSubtext: {
-    fontSize: 16,
-    color: "#FFFFFF",
-    opacity: 0.8,
-  },
-  placeholder: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 32,
-  },
-  placeholderIcon: {
-    fontSize: 80,
-    marginBottom: 24,
-  },
-  placeholderText: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: COLORS.text,
-    marginBottom: 12,
-  },
-  placeholderSubtext: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    textAlign: "center",
-    lineHeight: 20,
-  },
-  actions: {
-    padding: 16,
-    gap: 12,
-  },
-  button: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 16,
-    borderRadius: 12,
-    gap: 8,
-  },
-  primaryButton: {
-    backgroundColor: COLORS.primary,
-  },
-  scanButton: {
-    backgroundColor: "#4CAF50",
-  },
-  secondaryButton: {
-    backgroundColor: COLORS.secondary,
-  },
-  outlineButton: {
-    backgroundColor: "transparent",
-    borderWidth: 2,
-    borderColor: COLORS.border,
-  },
-  buttonIcon: {
-    fontSize: 24,
-  },
-  buttonText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#FFFFFF",
-  },
-  outlineButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: COLORS.text,
-  },
-});

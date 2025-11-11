@@ -20,6 +20,9 @@ func RegisterFoodRoutes(router *gin.RouterGroup, foodHandler *handler.FoodHandle
 
 		// Scanning
 		foods.POST("/scan", foodHandler.ScanFood)
+		foods.POST("/add-scanned", foodHandler.AddScannedFood)
+		foods.GET("/check-duplicate", foodHandler.CheckDuplicate)
+		foods.PATCH("/:id/stock", foodHandler.UpdateStock)
 
 		// Seed dummy data (development only)
 		foods.POST("/seed-dummy", foodHandler.SeedDummyFoods)
@@ -28,6 +31,7 @@ func RegisterFoodRoutes(router *gin.RouterGroup, foodHandler *handler.FoodHandle
 		foods.GET("/category", foodHandler.GetFoodsByCategory)
 		foods.GET("/location", foodHandler.GetFoodsByLocation)
 		foods.GET("/expiring", foodHandler.GetExpiringSoon)
+		foods.GET("/donatable", foodHandler.GetDonatableFoods)
 		foods.GET("/expired", foodHandler.GetExpired)
 		foods.GET("/search", foodHandler.SearchFood)
 

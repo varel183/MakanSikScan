@@ -49,6 +49,47 @@ func (r *RewardRepository) GetUserPointsByUserID(userID uuid.UUID) (*models.User
 	return &points, err
 }
 
+// GetUserPoints is an alias for GetUserPointsByUserID
+func (r *RewardRepository) GetUserPoints(userID uuid.UUID) (*models.UserPoints, error) {
+	return r.GetUserPointsByUserID(userID)
+}
+
+// DeductPoints deducts points from user and creates a transaction
+func (r *RewardRepository) DeductPoints(userID uuid.UUID, points int, source, description string, referenceID *uuid.UUID, referenceType string) error {
+	// Start transaction
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		// Get user points
+		var userPoints models.UserPoints
+		if err := tx.Where("user_id = ?", userID).First(&userPoints).Error; err != nil {
+			return err
+		}
+
+		// Check if user has enough points
+		if userPoints.AvailablePoints < points {
+			return gorm.ErrInvalidData
+		}
+
+		// Update points
+		userPoints.AvailablePoints -= points
+		userPoints.UsedPoints += points
+		if err := tx.Save(&userPoints).Error; err != nil {
+			return err
+		}
+
+		// Create transaction
+		transaction := &models.PointTransaction{
+			UserPointsID:  userPoints.ID,
+			Type:          "spend",
+			Amount:        points,
+			Source:        source,
+			Description:   description,
+			ReferenceID:   referenceID,
+			ReferenceType: referenceType,
+		}
+		return tx.Create(transaction).Error
+	})
+}
+
 // PointTransaction methods
 func (r *RewardRepository) CreateTransaction(transaction *models.PointTransaction) error {
 	return r.db.Create(transaction).Error

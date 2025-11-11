@@ -3,6 +3,7 @@ package service
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -176,6 +177,17 @@ func (s *RecipeService) GetRecommendedRecipes(
 		// Convert ingredients map to JSON string
 		ingredientsJSON, _ := json.Marshal(geminiRecipe.Ingredients)
 
+		// Create unique external ID based on title (to avoid duplicates)
+		externalID := fmt.Sprintf("gemini-%s", strings.ToLower(strings.ReplaceAll(geminiRecipe.Title, " ", "-")))
+
+		// Check if recipe already exists
+		existingRecipe, _ := s.recipeRepo.FindByExternalID(externalID, "gemini")
+		if existingRecipe != nil {
+			// Recipe already exists, use it instead of creating new one
+			responses = append(responses, *s.toRecipeResponse(existingRecipe))
+			continue
+		}
+
 		// Save to database for caching
 		recipe := &models.Recipe{
 			ID:           uuid.New(),
@@ -197,7 +209,7 @@ func (s *RecipeService) GetRecommendedRecipes(
 			IsHalal:      geminiRecipe.IsHalal,
 			IsVegetarian: geminiRecipe.IsVegetarian,
 			IsVegan:      geminiRecipe.IsVegan,
-			ExternalID:   "",
+			ExternalID:   externalID,
 			Source:       "gemini",
 		}
 

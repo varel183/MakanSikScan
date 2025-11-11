@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/varel183/MakanSikScan/backend/internal/middleware"
 	"github.com/varel183/MakanSikScan/backend/internal/service"
 	"github.com/varel183/MakanSikScan/backend/internal/utils"
 
@@ -49,7 +50,7 @@ func (h *DonationHandler) GetMarketByID(c *gin.Context) {
 // CreateDonation creates a new donation
 func (h *DonationHandler) CreateDonation(c *gin.Context) {
 	var req struct {
-		FoodID   uint   `json:"food_id" binding:"required"`
+		FoodID   string `json:"food_id" binding:"required"`
 		MarketID uint   `json:"market_id" binding:"required"`
 		Quantity int    `json:"quantity" binding:"required,min=1"`
 		Notes    string `json:"notes"`
@@ -60,9 +61,13 @@ func (h *DonationHandler) CreateDonation(c *gin.Context) {
 		return
 	}
 
-	userID := c.GetUint("user_id")
+	userIDStr, err := middleware.GetUserIDString(c)
+	if err != nil || userIDStr == "" {
+		c.JSON(http.StatusUnauthorized, utils.ErrorResponse("Unauthorized"))
+		return
+	}
 
-	donation, err := h.donationService.CreateDonation(userID, req.FoodID, req.MarketID, req.Quantity, req.Notes)
+	donation, err := h.donationService.CreateDonationByStringIDs(userIDStr, req.FoodID, req.MarketID, req.Quantity, req.Notes)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, utils.ErrorResponse(err.Error()))
 		return
@@ -73,9 +78,13 @@ func (h *DonationHandler) CreateDonation(c *gin.Context) {
 
 // GetUserDonations retrieves user's donation history
 func (h *DonationHandler) GetUserDonations(c *gin.Context) {
-	userID := c.GetUint("user_id")
+	userIDStr, err := middleware.GetUserIDString(c)
+	if err != nil || userIDStr == "" {
+		c.JSON(http.StatusUnauthorized, utils.ErrorResponse("Unauthorized"))
+		return
+	}
 
-	donations, err := h.donationService.GetUserDonations(userID)
+	donations, err := h.donationService.GetUserDonationsByStringID(userIDStr)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse("Failed to get donations"))
 		return
@@ -86,13 +95,17 @@ func (h *DonationHandler) GetUserDonations(c *gin.Context) {
 
 // GetDonationStats retrieves donation statistics
 func (h *DonationHandler) GetDonationStats(c *gin.Context) {
-	userID := c.GetUint("user_id")
-
-	stats, err := h.donationService.GetDonationStats(userID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, utils.ErrorResponse("Failed to get stats"))
+	userIDStr, err := middleware.GetUserIDString(c)
+	if err != nil || userIDStr == "" {
+		c.JSON(http.StatusUnauthorized, utils.ErrorResponse("Unauthorized"))
 		return
 	}
 
-	c.JSON(http.StatusOK, utils.SuccessResponse("Stats retrieved successfully", stats))
+	stats, err := h.donationService.GetDonationStatsByStringID(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse("Failed to get donation stats"))
+		return
+	}
+
+	c.JSON(http.StatusOK, utils.SuccessResponse("Statistics retrieved successfully", stats))
 }

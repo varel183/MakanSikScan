@@ -1,7 +1,7 @@
 package service
 
 import (
-	"bytes"
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -10,12 +10,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/generative-ai-go/genai"
 	"github.com/varel183/MakanSikScan/backend/internal/config"
+	"google.golang.org/api/option"
 )
 
 type GeminiService struct {
-	apiKey string
-	client *http.Client
+	apiKey      string
+	client      *http.Client
+	genaiClient *genai.Client
 }
 
 type GeminiRequest struct {
@@ -102,8 +105,15 @@ type RecipeRecommendation struct {
 }
 
 func NewGeminiService(cfg *config.Config) *GeminiService {
+	ctx := context.Background()
+	client, err := genai.NewClient(ctx, option.WithAPIKey(cfg.API.GeminiKey))
+	if err != nil {
+		fmt.Printf("⚠️  Failed to create Gemini client: %v\n", err)
+	}
+
 	return &GeminiService{
-		apiKey: cfg.API.GeminiKey,
+		apiKey:      cfg.API.GeminiKey,
+		genaiClient: client,
 		client: &http.Client{
 			Timeout: 30 * time.Second,
 		},
@@ -117,7 +127,7 @@ func (s *GeminiService) AnalyzeFoodImage(imageURL string) (*FoodScanResult, erro
 	fmt.Printf("🔑 API Key present: %v\n", s.apiKey != "")
 
 	if s.apiKey == "" {
-		fmt.Println("❌ FATAL: Gemini API key not set!")
+		fmt.Println("FATAL: Gemini API key not set!")
 		return nil, fmt.Errorf("Gemini API key is not configured")
 	}
 
@@ -125,14 +135,14 @@ func (s *GeminiService) AnalyzeFoodImage(imageURL string) (*FoodScanResult, erro
 	fmt.Println("⬇️  Downloading image...")
 	imageData, mimeType, err := s.downloadImageAsBase64(imageURL)
 	if err != nil {
-		fmt.Printf("❌ Failed to download image: %v\n", err)
+		fmt.Printf("Failed to download image: %v\n", err)
 		return nil, fmt.Errorf("failed to download image: %w", err)
 	}
-	fmt.Printf("✅ Image downloaded successfully (type: %s, size: %d bytes)\n", mimeType, len(imageData))
+	fmt.Printf("Image downloaded successfully (type: %s, size: %d bytes)\n", mimeType, len(imageData))
 
 	prompt := `Analyze this food image and provide a detailed analysis in JSON format with the following information:
 {
-  "name": "food name in Indonesian",
+  "name": "food name in English",
   "category": "one of: Vegetable, Fruit, Meat, Fish, Dairy, Grain, Frozen, Canned, Beverage, Snack, Other",
   "confidence": confidence score 0-100,
   "calories": estimated calories per 100g,
@@ -141,7 +151,7 @@ func (s *GeminiService) AnalyzeFoodImage(imageURL string) (*FoodScanResult, erro
   "fat": fat in grams per 100g,
   "is_halal": true/false based on ingredients,
   "expiry_days": estimated days until expiry from now,
-  "storage_tips": storage recommendations in Indonesian
+  "storage_tips": storage recommendations in English
 }
 
 Only return the JSON, no additional text.`
@@ -149,21 +159,21 @@ Only return the JSON, no additional text.`
 	fmt.Println("🤖 Calling Gemini Vision API...")
 	response, err := s.callGeminiVision(prompt, imageData, mimeType)
 	if err != nil {
-		fmt.Printf("❌ Gemini API call failed: %v\n", err)
+		fmt.Printf("Gemini API call failed: %v\n", err)
 		return nil, fmt.Errorf("gemini API call failed: %w", err)
 	}
-	fmt.Println("✅ Received response from Gemini")
+	fmt.Println("Received response from Gemini")
 
 	var result FoodScanResult
 	jsonStr := s.extractJSON(response)
 	fmt.Printf("📝 Extracted JSON: %s\n", jsonStr)
 
 	if err := json.Unmarshal([]byte(jsonStr), &result); err != nil {
-		fmt.Printf("❌ Failed to parse Gemini response: %v\n", err)
+		fmt.Printf("Failed to parse Gemini response: %v\n", err)
 		return nil, fmt.Errorf("failed to parse response: %w", err)
 	}
 
-	fmt.Printf("✅ Successfully analyzed food with Gemini: %s (confidence: %.1f%%)\n", result.Name, result.Confidence)
+	fmt.Printf("Successfully analyzed food with Gemini: %s (confidence: %.1f%%)\n", result.Name, result.Confidence)
 	return &result, nil
 }
 
@@ -174,7 +184,7 @@ func (s *GeminiService) AnalyzeFoodImageBase64(base64Data string) (*FoodScanResu
 	fmt.Printf("📊 Base64 data size: %d bytes\n", len(base64Data))
 
 	if s.apiKey == "" {
-		fmt.Println("❌ FATAL: Gemini API key not set!")
+		fmt.Println("FATAL: Gemini API key not set!")
 		return nil, fmt.Errorf("Gemini API key is not configured")
 	}
 
@@ -190,7 +200,7 @@ func (s *GeminiService) AnalyzeFoodImageBase64(base64Data string) (*FoodScanResu
 
 	prompt := `Analyze this food image and provide a detailed analysis in JSON format with the following information:
 {
-  "name": "food name in Indonesian",
+  "name": "food name in English",
   "category": "one of: Vegetable, Fruit, Meat, Fish, Dairy, Grain, Frozen, Canned, Beverage, Snack, Other",
   "confidence": confidence score 0-100,
   "calories": estimated calories per 100g,
@@ -199,7 +209,7 @@ func (s *GeminiService) AnalyzeFoodImageBase64(base64Data string) (*FoodScanResu
   "fat": fat in grams per 100g,
   "is_halal": true/false based on ingredients,
   "expiry_days": estimated days until expiry from now,
-  "storage_tips": storage recommendations in Indonesian
+  "storage_tips": storage recommendations in English
 }
 
 Only return the JSON, no additional text.`
@@ -207,21 +217,21 @@ Only return the JSON, no additional text.`
 	fmt.Println("🤖 Calling Gemini Vision API with base64 image...")
 	response, err := s.callGeminiVision(prompt, base64Data, mimeType)
 	if err != nil {
-		fmt.Printf("❌ Gemini API call failed: %v\n", err)
+		fmt.Printf("Gemini API call failed: %v\n", err)
 		return nil, fmt.Errorf("gemini API call failed: %w", err)
 	}
-	fmt.Println("✅ Received response from Gemini")
+	fmt.Println("Received response from Gemini")
 
 	var result FoodScanResult
 	jsonStr := s.extractJSON(response)
 	fmt.Printf("📝 Extracted JSON: %s\n", jsonStr)
 
 	if err := json.Unmarshal([]byte(jsonStr), &result); err != nil {
-		fmt.Printf("❌ Failed to parse Gemini response: %v\n", err)
+		fmt.Printf("Failed to parse Gemini response: %v\n", err)
 		return nil, fmt.Errorf("failed to parse response: %w", err)
 	}
 
-	fmt.Printf("✅ Successfully analyzed food with Gemini: %s (confidence: %.1f%%)\n", result.Name, result.Confidence)
+	fmt.Printf("Successfully analyzed food with Gemini: %s (confidence: %.1f%%)\n", result.Name, result.Confidence)
 	return &result, nil
 }
 
@@ -274,7 +284,7 @@ Please provide a comprehensive analysis in JSON format:
   "warnings": ["warning 1 if any"]
 }
 
-Provide recommendations in Indonesian. Only return JSON, no additional text.`,
+Provide recommendations in English. Only return JSON, no additional text.`,
 		userAge, userWeight, userHeight, userGender, activityLevel,
 		totalCalories, totalProtein, totalCarbs, totalFat,
 		strings.Join(meals, "\n"))
@@ -328,8 +338,8 @@ Preferences:
 Please provide %d recipes in JSON array format:
 [
   {
-    "title": "recipe name in Indonesian",
-    "description": "brief description in Indonesian",
+    "title": "recipe name in English",
+    "description": "brief description in English",
     "ingredients": {"ingredient1": "amount", "ingredient2": "amount"},
     "instructions": ["step 1", "step 2"],
     "prep_time": minutes,
@@ -347,11 +357,11 @@ Please provide %d recipes in JSON array format:
     "is_vegan": true/false,
     "match_percentage": percentage of available ingredients,
     "missing_items": ["item1", "item2"],
-    "tips": "cooking tips in Indonesian"
+    "tips": "cooking tips in English"
   }
 ]
 
-Prioritize recipes with highest match_percentage. Instructions in Indonesian. Only return JSON array.`,
+Prioritize recipes with highest match_percentage. Instructions in English. Only return JSON array.`,
 		numberOfRecipes,
 		strings.Join(availableIngredients, "\n- "),
 		strings.Join(preferences, ", "),
@@ -373,116 +383,76 @@ Prioritize recipes with highest match_percentage. Instructions in Indonesian. On
 	return results, nil
 }
 
-// callGemini - Helper untuk call Gemini API
+// callGemini - Helper untuk call Gemini API (text-only) menggunakan SDK
 func (s *GeminiService) callGemini(prompt string) (string, error) {
-	url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=%s", s.apiKey)
-
-	requestBody := GeminiRequest{
-		Contents: []GeminiContent{
-			{
-				Parts: []GeminiPart{
-					{Text: prompt},
-				},
-			},
-		},
+	if s.genaiClient == nil {
+		return "", fmt.Errorf("Gemini client not initialized")
 	}
 
-	jsonData, err := json.Marshal(requestBody)
+	model := s.genaiClient.GenerativeModel("gemini-2.5-flash")
+
+	ctx := context.Background()
+	resp, err := model.GenerateContent(ctx, genai.Text(prompt))
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("gemini API error: %w", err)
 	}
 
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
-	if err != nil {
-		return "", err
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := s.client.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("gemini API error: %s", string(body))
-	}
-
-	var geminiResp GeminiResponse
-	if err := json.Unmarshal(body, &geminiResp); err != nil {
-		return "", err
-	}
-
-	if len(geminiResp.Candidates) == 0 || len(geminiResp.Candidates[0].Content.Parts) == 0 {
+	if len(resp.Candidates) == 0 || resp.Candidates[0].Content == nil || len(resp.Candidates[0].Content.Parts) == 0 {
 		return "", fmt.Errorf("no response from Gemini")
 	}
 
-	return geminiResp.Candidates[0].Content.Parts[0].Text, nil
+	part := resp.Candidates[0].Content.Parts[0]
+	if txt, ok := part.(genai.Text); ok {
+		return string(txt), nil
+	}
+
+	return "", fmt.Errorf("response part bukanlah teks")
 }
 
-// callGeminiVision - Helper untuk call Gemini Vision API dengan image
+// callGeminiVision - Helper untuk call Gemini Vision API dengan image menggunakan SDK
 func (s *GeminiService) callGeminiVision(prompt string, imageData string, mimeType string) (string, error) {
-	url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=%s", s.apiKey)
-
-	requestBody := GeminiRequest{
-		Contents: []GeminiContent{
-			{
-				Parts: []GeminiPart{
-					{Text: prompt},
-					{
-						InlineData: &GeminiImageData{
-							MimeType: mimeType,
-							Data:     imageData,
-						},
-					},
-				},
-			},
-		},
+	if s.genaiClient == nil {
+		return "", fmt.Errorf("Gemini client not initialized")
 	}
 
-	jsonData, err := json.Marshal(requestBody)
+	fmt.Printf("🔧 callGeminiVision called with mimeType: '%s'\n", mimeType)
+
+	model := s.genaiClient.GenerativeModel("gemini-2.5-flash")
+
+	// Decode base64 image data
+	decodedData, err := base64.StdEncoding.DecodeString(imageData)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("gagal men-decode base64 image data: %w", err)
 	}
 
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	fmt.Printf("Decoded image data: %d bytes\n", len(decodedData))
+
+	// Try using Blob instead of ImageData
+	parts := []genai.Part{
+		genai.Text(prompt),
+		genai.Blob{MIMEType: "image/jpeg", Data: decodedData},
+	}
+
+	fmt.Printf("🧹 Using Blob with MIMEType: 'image/jpeg'\n")
+
+	// Generate content
+	ctx := context.Background()
+	resp, err := model.GenerateContent(ctx, parts...)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("gemini API error: %w", err)
 	}
 
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := s.client.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
+	// Extract text from response
+	if len(resp.Candidates) == 0 || resp.Candidates[0].Content == nil || len(resp.Candidates[0].Content.Parts) == 0 {
+		return "", fmt.Errorf("no response content from Gemini")
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("gemini API error (status %d): %s", resp.StatusCode, string(body))
+	part := resp.Candidates[0].Content.Parts[0]
+	if txt, ok := part.(genai.Text); ok {
+		return string(txt), nil
 	}
 
-	var geminiResp GeminiResponse
-	if err := json.Unmarshal(body, &geminiResp); err != nil {
-		return "", fmt.Errorf("failed to parse response: %w", err)
-	}
-
-	if len(geminiResp.Candidates) == 0 || len(geminiResp.Candidates[0].Content.Parts) == 0 {
-		return "", fmt.Errorf("no response from Gemini")
-	}
-
-	return geminiResp.Candidates[0].Content.Parts[0].Text, nil
+	return "", fmt.Errorf("response part [0] bukanlah teks")
 }
 
 // downloadImageAsBase64 - Download image dari URL dan convert ke base64
@@ -576,7 +546,7 @@ func (s *GeminiService) mockNutritionAnalysis(calories, protein, carbs, fat floa
 	}
 }
 
-func (s *GeminiService) mockRecipeRecommendations(ingredients []string) []RecipeRecommendation {
+func (s *GeminiService) mockRecipeRecommendations(_ []string) []RecipeRecommendation {
 	return []RecipeRecommendation{
 		{
 			Title:       "Tumis Sayuran Sehat",

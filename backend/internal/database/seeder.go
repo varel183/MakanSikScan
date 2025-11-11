@@ -10,40 +10,40 @@ import (
 func SeedDonationMarkets() {
 	markets := []models.DonationMarket{
 		{
-			Name:        "Yayasan Panti Asuhan Kasih Ibu",
-			Description: "Panti asuhan yang menampung 50+ anak yatim dan dhuafa. Membutuhkan donasi makanan sehat untuk anak-anak.",
+			Name:        "Kasih Ibu Orphanage Foundation",
+			Description: "Orphanage housing 50+ orphans and underprivileged children. Needs healthy food donations for the children.",
 			Address:     "Jl. Merdeka No. 123, Bandung",
 			Phone:       "022-1234567",
-			ImageURL:    "https://via.placeholder.com/300x200?text=Panti+Asuhan",
+			ImageURL:    "https://via.placeholder.com/300x200?text=Orphanage",
 			IsActive:    true,
 		},
 		{
-			Name:        "Rumah Singgah Harapan Bangsa",
-			Description: "Rumah singgah untuk anak jalanan dan kaum marginal. Melayani 30+ orang setiap harinya.",
+			Name:        "Harapan Bangsa Shelter House",
+			Description: "Shelter house for street children and marginalized people. Serves 30+ people daily.",
 			Address:     "Jl. Sudirman No. 45, Bandung",
 			Phone:       "022-7654321",
-			ImageURL:    "https://via.placeholder.com/300x200?text=Rumah+Singgah",
+			ImageURL:    "https://via.placeholder.com/300x200?text=Shelter+House",
 			IsActive:    true,
 		},
 		{
-			Name:        "Dapur Umum Peduli Sesama",
-			Description: "Dapur umum yang menyediakan makanan gratis untuk fakir miskin dan tunawisma.",
+			Name:        "Community Care Soup Kitchen",
+			Description: "Public kitchen providing free meals for the poor and homeless.",
 			Address:     "Jl. Ahmad Yani No. 78, Bandung",
 			Phone:       "022-9876543",
-			ImageURL:    "https://via.placeholder.com/300x200?text=Dapur+Umum",
+			ImageURL:    "https://via.placeholder.com/300x200?text=Soup+Kitchen",
 			IsActive:    true,
 		},
 		{
-			Name:        "Panti Jompo Sejahtera",
-			Description: "Panti jompo yang merawat 40+ lansia terlantar. Membutuhkan makanan bergizi untuk lansia.",
+			Name:        "Sejahtera Nursing Home",
+			Description: "Nursing home caring for 40+ abandoned elderly. Needs nutritious food for seniors.",
 			Address:     "Jl. Gatot Subroto No. 90, Bandung",
 			Phone:       "022-5555555",
-			ImageURL:    "https://via.placeholder.com/300x200?text=Panti+Jompo",
+			ImageURL:    "https://via.placeholder.com/300x200?text=Nursing+Home",
 			IsActive:    true,
 		},
 		{
 			Name:        "Food Bank Indonesia - Bandung",
-			Description: "Bank makanan yang mendistribusikan makanan layak konsumsi kepada yang membutuhkan.",
+			Description: "Food bank distributing safe-to-eat food to those in need.",
 			Address:     "Jl. Asia Afrika No. 56, Bandung",
 			Phone:       "022-3333333",
 			ImageURL:    "https://via.placeholder.com/300x200?text=Food+Bank",
@@ -57,14 +57,31 @@ func SeedDonationMarkets() {
 		if err := DB.Where("name = ?", market.Name).First(&existing).Error; err != nil {
 			// Market doesn't exist, create it
 			if err := DB.Create(&market).Error; err != nil {
-				log.Printf("❌ Failed to seed market %s: %v", market.Name, err)
+				log.Printf("Failed to seed market %s: %v", market.Name, err)
 			} else {
-				log.Printf("✅ Seeded market: %s", market.Name)
+				log.Printf("Seeded market: %s", market.Name)
 			}
 		} else {
 			log.Printf("⏭️  Market already exists: %s", market.Name)
 		}
 	}
 
-	log.Println("✅ Donation markets seeding completed")
+	log.Println("Donation markets seeding completed")
+}
+
+// SeedAll runs all seeders
+func SeedAll() {
+	log.Println("🌱 Starting database seeding...")
+
+	// Seed donation markets
+	SeedDonationMarkets()
+
+	// Seed vouchers
+	if err := SeedVouchers(DB); err != nil {
+		log.Printf("Failed to seed vouchers: %v", err)
+	} else {
+		log.Println("✅ Vouchers seeding completed")
+	}
+
+	log.Println("🎉 All seeding completed!")
 }

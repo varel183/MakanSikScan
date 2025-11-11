@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, RefreshControl, Alert, TextInput } from "react-native";
+import { View, Text, FlatList, TouchableOpacity, RefreshControl, Alert, ActivityIndicator } from "react-native";
+import { ShoppingCart, Minus, Plus, Trash2, CheckCircle, History } from "lucide-react-native";
 import apiService from "../../services/api";
 import { CartItem } from "../../types";
 import { COLORS } from "../../constants";
@@ -73,50 +74,56 @@ export default function CartScreen({ navigation }: any) {
   };
 
   const renderCartItem = ({ item }: { item: CartItem }) => (
-    <View style={styles.cartCard}>
-      <View style={styles.cartHeader}>
-        <Text style={styles.itemName}>{item.item_name}</Text>
+    <View className="bg-white rounded-xl p-4 mb-3 shadow-sm">
+      <View className="flex-row justify-between items-center mb-3">
+        <Text className="text-base font-semibold text-gray-900 flex-1">{item.item_name}</Text>
         {item.is_purchased && (
-          <View style={styles.purchasedBadge}>
-            <Text style={styles.purchasedText}>✓ Purchased</Text>
+          <View className="bg-green-50 px-2 py-1 rounded-lg">
+            <Text className="text-xs font-semibold text-green-600">✓ Purchased</Text>
           </View>
         )}
       </View>
 
-      <View style={styles.cartBody}>
-        <View style={styles.quantityContainer}>
+      <View className="flex-row justify-between items-center mb-3">
+        <View className="flex-row items-center gap-3">
           <TouchableOpacity
-            style={styles.quantityButton}
+            className="w-8 h-8 rounded-full bg-gray-100 justify-center items-center"
             onPress={() => handleUpdateQuantity(item.id, item.quantity - 1)}
             disabled={item.is_purchased}>
-            <Text style={styles.quantityButtonText}>−</Text>
+            <Minus size={16} color={COLORS.text} />
           </TouchableOpacity>
-          <Text style={styles.quantityText}>{item.quantity}</Text>
+          <Text className="text-lg font-semibold text-gray-900 min-w-[40px] text-center">{item.quantity}</Text>
           <TouchableOpacity
-            style={styles.quantityButton}
+            className="w-8 h-8 rounded-full bg-gray-100 justify-center items-center"
             onPress={() => handleUpdateQuantity(item.id, item.quantity + 1)}
             disabled={item.is_purchased}>
-            <Text style={styles.quantityButtonText}>+</Text>
+            <Plus size={16} color={COLORS.text} />
           </TouchableOpacity>
         </View>
 
         {item.category && (
-          <View style={styles.categoryBadge}>
-            <Text style={styles.categoryText}>{item.category}</Text>
+          <View className="bg-gray-100 px-3 py-1 rounded-lg">
+            <Text className="text-xs text-gray-600">{item.category}</Text>
           </View>
         )}
       </View>
 
-      {item.notes && <Text style={styles.notes}>📝 {item.notes}</Text>}
+      {item.notes && <Text className="text-sm text-gray-600 italic mb-3">📝 {item.notes}</Text>}
 
-      <View style={styles.cartActions}>
+      <View className="flex-row gap-2 mt-2">
         {!item.is_purchased && (
-          <TouchableOpacity style={styles.purchaseButton} onPress={() => handleTogglePurchased(item)}>
-            <Text style={styles.purchaseButtonText}>Mark as Purchased</Text>
+          <TouchableOpacity
+            className="flex-1 flex-row items-center justify-center py-2.5 rounded-lg"
+            style={{ backgroundColor: COLORS.primary }}
+            onPress={() => handleTogglePurchased(item)}>
+            <CheckCircle size={16} color="#FFFFFF" />
+            <Text className="text-white text-xs font-semibold ml-1.5">Mark as Purchased</Text>
           </TouchableOpacity>
         )}
-        <TouchableOpacity style={styles.deleteButton} onPress={() => handleDelete(item.id)}>
-          <Text style={styles.deleteButtonText}>🗑️ Remove</Text>
+        <TouchableOpacity
+          className="bg-gray-100 px-4 py-2.5 rounded-lg justify-center items-center"
+          onPress={() => handleDelete(item.id)}>
+          <Trash2 size={16} color="#EF4444" />
         </TouchableOpacity>
       </View>
     </View>
@@ -124,8 +131,8 @@ export default function CartScreen({ navigation }: any) {
 
   if (loading) {
     return (
-      <View style={styles.centerContainer}>
-        <Text style={styles.loadingText}>Loading cart...</Text>
+      <View className="flex-1 justify-center items-center">
+        <ActivityIndicator size="large" color={COLORS.primary} />
       </View>
     );
   }
@@ -134,240 +141,44 @@ export default function CartScreen({ navigation }: any) {
   const purchasedItems = cartItems.filter((item) => item.is_purchased);
 
   return (
-    <View style={styles.container}>
+    <View className="flex-1 bg-gray-50">
       <FlatList
         data={[...activeItems, ...purchasedItems]}
         keyExtractor={(item) => item.id}
         renderItem={renderCartItem}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListHeaderComponent={() => (
-          <View style={styles.header}>
-            <View style={styles.summaryCard}>
-              <Text style={styles.summaryTitle}>Shopping List</Text>
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryText}>{activeItems.length} items to buy</Text>
-                <Text style={styles.summaryText}>{purchasedItems.length} purchased</Text>
+          <View className="p-4 pb-2">
+            <View className="rounded-2xl p-5 mb-3" style={{ backgroundColor: COLORS.primary }}>
+              <Text className="text-xl font-semibold text-white mb-3">Shopping List</Text>
+              <View className="flex-row justify-between">
+                <Text className="text-sm text-white opacity-90">{activeItems.length} items to buy</Text>
+                <Text className="text-sm text-white opacity-90">{purchasedItems.length} purchased</Text>
               </View>
             </View>
-            <TouchableOpacity style={styles.historyButton} onPress={() => navigation.navigate("PurchaseHistory")}>
-              <Text style={styles.historyButtonText}>📋 View Purchase History</Text>
+            <TouchableOpacity
+              className="bg-white p-3 rounded-xl items-center flex-row justify-center gap-2"
+              onPress={() => navigation.navigate("PurchaseHistory")}>
+              <History size={18} color={COLORS.primary} />
+              <Text className="text-sm font-semibold" style={{ color: COLORS.primary }}>View Purchase History</Text>
             </TouchableOpacity>
           </View>
         )}
         ListEmptyComponent={() => (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyEmoji}>🛒</Text>
-            <Text style={styles.emptyText}>Your cart is empty</Text>
-            <Text style={styles.emptySubtext}>Add items from recipes or create custom shopping lists</Text>
+          <View className="items-center p-12">
+            <ShoppingCart size={64} color="#D1D5DB" />
+            <Text className="text-lg font-semibold text-gray-900 mt-4 mb-2">Your cart is empty</Text>
+            <Text className="text-sm text-gray-600 text-center">Add items from recipes or create custom shopping lists</Text>
           </View>
         )}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={{ padding: 16 }}
       />
 
       {activeItems.length > 0 && (
-        <View style={styles.fab}>
-          <Text style={styles.fabText}>{activeItems.reduce((sum, item) => sum + item.quantity, 0)} items</Text>
+        <View className="absolute bottom-5 right-5 px-5 py-3 rounded-full shadow-lg" style={{ backgroundColor: COLORS.primary }}>
+          <Text className="text-white font-semibold text-sm">{activeItems.reduce((sum, item) => sum + item.quantity, 0)} items</Text>
         </View>
       )}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  loadingText: {
-    fontSize: 16,
-    color: COLORS.textSecondary,
-  },
-  listContent: {
-    padding: 16,
-  },
-  header: {
-    marginBottom: 16,
-  },
-  summaryCard: {
-    backgroundColor: COLORS.primary,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 12,
-  },
-  summaryTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#FFFFFF",
-    marginBottom: 12,
-  },
-  summaryRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  summaryText: {
-    fontSize: 14,
-    color: "#FFFFFF",
-    opacity: 0.9,
-  },
-  historyButton: {
-    backgroundColor: "#FFFFFF",
-    padding: 12,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  historyButtonText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: COLORS.primary,
-  },
-  cartCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  cartHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  itemName: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: COLORS.text,
-    flex: 1,
-  },
-  purchasedBadge: {
-    backgroundColor: "#E8F5E9",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  purchasedText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: COLORS.success,
-  },
-  cartBody: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  quantityContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  quantityButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: COLORS.card,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  quantityButtonText: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: COLORS.text,
-  },
-  quantityText: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: COLORS.text,
-    minWidth: 40,
-    textAlign: "center",
-  },
-  categoryBadge: {
-    backgroundColor: COLORS.card,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  categoryText: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-  },
-  notes: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    fontStyle: "italic",
-    marginBottom: 12,
-  },
-  cartActions: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  purchaseButton: {
-    flex: 1,
-    backgroundColor: COLORS.primary,
-    padding: 10,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  purchaseButtonText: {
-    color: "#FFFFFF",
-    fontWeight: "600",
-    fontSize: 13,
-  },
-  deleteButton: {
-    backgroundColor: COLORS.card,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  deleteButtonText: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-  },
-  emptyContainer: {
-    alignItems: "center",
-    padding: 48,
-  },
-  emptyEmoji: {
-    fontSize: 64,
-    marginBottom: 16,
-  },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: COLORS.text,
-    marginBottom: 8,
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    textAlign: "center",
-  },
-  fab: {
-    position: "absolute",
-    bottom: 20,
-    right: 20,
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 24,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  fabText: {
-    color: "#FFFFFF",
-    fontWeight: "600",
-    fontSize: 14,
-  },
-});

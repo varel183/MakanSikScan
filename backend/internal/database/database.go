@@ -24,7 +24,7 @@ func Connect(cfg *config.DatabaseConfig) error {
 		return fmt.Errorf("failed to connect to database: %w", err)
 	}
 
-	log.Println("✅ Database connected successfully")
+	log.Println("Database connected successfully")
 	return nil
 }
 
@@ -55,7 +55,7 @@ func Migrate() error {
 		return fmt.Errorf("failed to migrate: %w", err)
 	}
 
-	log.Println("✅ Migrations completed successfully")
+	log.Println("Migrations completed successfully")
 	return nil
 }
 

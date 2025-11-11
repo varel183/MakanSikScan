@@ -16,7 +16,6 @@ export interface Food {
   name: string;
   category: string;
   quantity: number;
-  initial_quantity: number;
   unit: string;
   location: string;
   purchase_date: string;
@@ -117,25 +116,32 @@ export interface Voucher {
   id: string;
   code: string;
   title: string;
-  description?: string;
+  description: string;
   discount_type: "percentage" | "fixed";
   discount_value: number;
+  min_purchase: number;
+  max_discount?: number;
   points_required: number;
   store_name: string;
-  terms?: string;
+  store_category: string;
   total_stock: number;
   remaining_stock: number;
   valid_from: string;
   valid_until: string;
   is_active: boolean;
-  created_at: string;
+  terms_conditions: string;
+  image_url?: string;
 }
 
 export interface VoucherRedemption {
   id: string;
-  user_id: string;
   voucher_id: string;
-  voucher: Voucher;
+  voucher_code: string;
+  voucher_title: string;
+  store_name: string;
+  discount_type: "percentage" | "fixed";
+  discount_value: number;
+  points_spent: number;
   redemption_code: string;
   status: "active" | "used" | "expired";
   redeemed_at: string;
@@ -149,8 +155,10 @@ export interface ApiResponse<T> {
   data: T;
   meta?: {
     total?: number;
+    total_items?: number;
     page?: number;
     limit?: number;
+    total_pages?: number;
   };
 }
 

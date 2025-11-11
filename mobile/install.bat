@@ -4,7 +4,7 @@ echo ====================================
 echo.
 
 if not exist "package.json" (
-    echo ❌ Please run this script from the mobile directory
+    echo Please run this script from the mobile directory
     echo    cd mobile
     echo    install.bat
     exit /b 1
@@ -14,12 +14,12 @@ echo 📦 Installing dependencies...
 call npm install --legacy-peer-deps
 
 if %ERRORLEVEL% NEQ 0 (
-    echo ❌ Failed to install dependencies
+    echo Failed to install dependencies
     exit /b 1
 )
 
 echo.
-echo ✅ Installation complete!
+echo Installation complete!
 echo.
 echo 🚀 Next steps:
 echo.

@@ -21,24 +21,23 @@ func main() {
 	// Load configuration
 	cfg, err := config.Load()
 	if err != nil {
-		log.Fatalf("❌ Failed to load config: %v", err)
+		log.Fatalf("Failed to load config: %v", err)
 	}
 
 	// Connect to database
 	if err := database.Connect(&cfg.Database); err != nil {
-		log.Fatalf("❌ Failed to connect to database: %v", err)
+		log.Fatalf("Failed to connect to database: %v", err)
 	}
-	log.Println("✅ Database connected successfully")
+	log.Println("Database connected successfully")
 
 	// Run migrations
 	if err := database.Migrate(); err != nil {
-		log.Fatalf("❌ Failed to run migrations: %v", err)
+		log.Fatalf("Failed to run migrations: %v", err)
 	}
-	log.Println("✅ Database migrations completed")
+	log.Println("Database migrations completed")
 
-	// Seed donation markets
-	database.SeedDonationMarkets()
-	log.Println("✅ Donation markets seeded")
+	// Run all seeders
+	database.SeedAll()
 
 	// Seed dummy foods for varel@gmail.com
 	database.SeedDummyFoodsForVarel()
@@ -56,7 +55,7 @@ func main() {
 	// Setup routes with all dependencies
 	db := database.GetDB()
 	routes.SetupRoutes(router, db, cfg)
-	log.Println("✅ Routes configured successfully")
+	log.Println("Routes configured successfully")
 
 	// Create HTTP server
 	srv := &http.Server{
@@ -66,12 +65,12 @@ func main() {
 
 	// Start server in a goroutine
 	go func() {
-		log.Printf("✅ Server is running on http://localhost:%s\n", cfg.Server.Port)
+		log.Printf("Server is running on http://localhost:%s\n", cfg.Server.Port)
 		log.Printf("📚 API Documentation: http://localhost:%s/api/v1/health\n", cfg.Server.Port)
 		log.Printf("🏥 Health Check: http://localhost:%s/health\n", cfg.Server.Port)
 
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("❌ Failed to start server: %v", err)
+			log.Fatalf("Failed to start server: %v", err)
 		}
 	}()
 
@@ -87,8 +86,8 @@ func main() {
 	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil {
-		log.Fatalf("❌ Server forced to shutdown: %v", err)
+		log.Fatalf("Server forced to shutdown: %v", err)
 	}
 
-	log.Println("✅ Server exited gracefully")
+	log.Println("Server exited gracefully")
 }

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ActivityIndicator, TextInput, Alert } from "react-native";
+import { View, Text, FlatList, TouchableOpacity, Image, ActivityIndicator, TextInput, Alert } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import { Check, TrendingUp } from "lucide-react-native";
 import api from "../../services/api";
 import { Food } from "../../types";
+import { COLORS } from "../../constants";
 
 export default function SelectFoodForDonationScreen() {
   const navigation = useNavigation();
@@ -22,12 +24,18 @@ export default function SelectFoodForDonationScreen() {
 
   const loadFoods = async () => {
     try {
-      const response = await api.getFoods();
-      // Filter only foods that have quantity > 0
-      const availableFoods = response.foods.filter((f: Food) => f.quantity > 0);
-      setFoods(availableFoods);
+      // Use donatable foods API (foods expiring within 3 days)
+      const response = await api.getDonatableFoods();
+      setFoods(response.data || []);
+
+      if (!response.data || response.data.length === 0) {
+        Alert.alert(
+          "No Food Available",
+          "You don't have any food items suitable for donation. Foods that are about to expire (within 3 days) can be donated."
+        );
+      }
     } catch (error: any) {
-      console.error("Error loading foods:", error);
+      console.error("Error loading donatable foods:", error);
       Alert.alert("Error", "Failed to load your food items");
     } finally {
       setLoading(false);
@@ -59,7 +67,7 @@ export default function SelectFoodForDonationScreen() {
     setSubmitting(true);
     try {
       const response = await api.createDonation({
-        food_id: parseInt(selectedFood.id),
+        food_id: selectedFood.id, // Already a string (UUID)
         market_id: market.id,
         quantity: qty,
         notes,
@@ -83,20 +91,22 @@ export default function SelectFoodForDonationScreen() {
 
   const renderFoodItem = ({ item }: { item: Food }) => (
     <TouchableOpacity
-      style={[styles.foodCard, selectedFood?.id === item.id && styles.selectedCard]}
+      className={`flex-row bg-white rounded-xl p-3 mb-3 shadow-sm ${
+        selectedFood?.id === item.id ? "border-2 border-green-500" : ""
+      }`}
       onPress={() => handleSelectFood(item)}>
-      <Image source={{ uri: item.image_url || "https://via.placeholder.com/80" }} style={styles.foodImage} />
-      <View style={styles.foodInfo}>
-        <Text style={styles.foodName}>{item.name}</Text>
-        <Text style={styles.foodCategory}>{item.category}</Text>
-        <Text style={styles.foodQuantity}>Available: {item.quantity}</Text>
-        <Text style={styles.foodExpiry}>
+      <Image source={{ uri: item.image_url || "https://via.placeholder.com/80" }} className="w-18 h-18 rounded-lg bg-gray-200" />
+      <View className="flex-1 ml-3 justify-center">
+        <Text className="text-base font-bold text-gray-900 mb-1">{item.name}</Text>
+        <Text className="text-xs text-gray-600 mb-1">{item.category}</Text>
+        <Text className="text-xs text-green-500 font-semibold">Available: {item.quantity}</Text>
+        <Text className="text-xs text-gray-400 mt-1">
           Expires: {item.expiry_date ? new Date(item.expiry_date).toLocaleDateString() : "N/A"}
         </Text>
       </View>
       {selectedFood?.id === item.id && (
-        <View style={styles.checkmark}>
-          <Text style={styles.checkmarkText}>✓</Text>
+        <View className="w-8 h-8 rounded-full bg-green-500 justify-center items-center self-center">
+          <Check size={20} color="#FFFFFF" />
         </View>
       )}
     </TouchableOpacity>
@@ -104,31 +114,31 @@ export default function SelectFoodForDonationScreen() {
 
   if (loading) {
     return (
-      <View style={styles.centerContainer}>
+      <View className="flex-1 justify-center items-center">
         <ActivityIndicator size="large" color="#4CAF50" />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View className="flex-1 bg-gray-50">
       {/* Market Info Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Donate to</Text>
-        <Text style={styles.marketName}>{market.name}</Text>
+      <View className="bg-green-500 p-5 pt-10">
+        <Text className="text-sm text-white opacity-90">Donate to</Text>
+        <Text className="text-xl font-bold text-white mt-1">{market.name}</Text>
       </View>
 
       {/* Food List */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Select Food to Donate</Text>
+      <View className="flex-1">
+        <Text className="text-base font-bold text-gray-900 p-4 pb-3">Select Food to Donate</Text>
         <FlatList
           data={foods}
           renderItem={renderFoodItem}
           keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={styles.listContainer}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 16 }}
           ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No food items available for donation</Text>
+            <View className="items-center justify-center py-8">
+              <Text className="text-sm text-gray-400">No food items available for donation</Text>
             </View>
           }
         />
@@ -136,13 +146,13 @@ export default function SelectFoodForDonationScreen() {
 
       {/* Donation Form */}
       {selectedFood && (
-        <View style={styles.formContainer}>
-          <Text style={styles.formTitle}>Donation Details</Text>
+        <View className="bg-white rounded-t-3xl p-5 shadow-lg">
+          <Text className="text-lg font-bold text-gray-900 mb-4">Donation Details</Text>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Quantity (max: {selectedFood.quantity})</Text>
+          <View className="mb-4">
+            <Text className="text-sm text-gray-600 mb-2 font-medium">Quantity (max: {selectedFood.quantity})</Text>
             <TextInput
-              style={styles.input}
+              className="bg-gray-100 rounded-lg p-3 text-sm text-gray-900"
               value={donationQuantity}
               onChangeText={setDonationQuantity}
               keyboardType="number-pad"
@@ -150,211 +160,36 @@ export default function SelectFoodForDonationScreen() {
             />
           </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Notes (optional)</Text>
+          <View className="mb-4">
+            <Text className="text-sm text-gray-600 mb-2 font-medium">Notes (optional)</Text>
             <TextInput
-              style={[styles.input, styles.textArea]}
+              className="bg-gray-100 rounded-lg p-3 text-sm text-gray-900 h-20"
               value={notes}
               onChangeText={setNotes}
               placeholder="Add a message..."
               multiline
               numberOfLines={3}
+              textAlignVertical="top"
             />
           </View>
 
-          <View style={styles.pointsInfo}>
-            <Text style={styles.pointsText}>
-              You will earn: <Text style={styles.pointsValue}>{parseInt(donationQuantity || "0") * 10} points</Text>
-            </Text>
+          <View className="bg-green-50 p-3 rounded-lg mb-4">
+            <View className="flex-row items-center justify-center">
+              <TrendingUp size={18} color="#2E7D32" />
+              <Text className="text-sm text-green-800 ml-2">
+                You will earn: <Text className="font-bold text-base">{parseInt(donationQuantity || "0") * 10} points</Text>
+              </Text>
+            </View>
           </View>
 
           <TouchableOpacity
-            style={[styles.donateButton, submitting && styles.donateButtonDisabled]}
+            className={`bg-green-500 rounded-xl p-4 items-center ${submitting ? "opacity-60" : ""}`}
             onPress={handleDonate}
             disabled={submitting}>
-            <Text style={styles.donateButtonText}>{submitting ? "Processing..." : "Confirm Donation"}</Text>
+            <Text className="text-white text-base font-bold">{submitting ? "Processing..." : "Confirm Donation"}</Text>
           </TouchableOpacity>
         </View>
       )}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F5F5F5",
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  header: {
-    backgroundColor: "#4CAF50",
-    padding: 20,
-    paddingTop: 40,
-  },
-  headerTitle: {
-    fontSize: 14,
-    color: "#FFF",
-    opacity: 0.9,
-  },
-  marketName: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#FFF",
-    marginTop: 5,
-  },
-  section: {
-    flex: 1,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#333",
-    padding: 15,
-    paddingBottom: 10,
-  },
-  listContainer: {
-    padding: 15,
-    paddingTop: 0,
-  },
-  foodCard: {
-    flexDirection: "row",
-    backgroundColor: "#FFF",
-    borderRadius: 10,
-    padding: 10,
-    marginBottom: 10,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  selectedCard: {
-    borderWidth: 2,
-    borderColor: "#4CAF50",
-  },
-  foodImage: {
-    width: 70,
-    height: 70,
-    borderRadius: 8,
-    backgroundColor: "#E0E0E0",
-  },
-  foodInfo: {
-    flex: 1,
-    marginLeft: 12,
-    justifyContent: "center",
-  },
-  foodName: {
-    fontSize: 15,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 3,
-  },
-  foodCategory: {
-    fontSize: 12,
-    color: "#666",
-    marginBottom: 3,
-  },
-  foodQuantity: {
-    fontSize: 12,
-    color: "#4CAF50",
-    fontWeight: "600",
-  },
-  foodExpiry: {
-    fontSize: 11,
-    color: "#999",
-    marginTop: 2,
-  },
-  checkmark: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: "#4CAF50",
-    justifyContent: "center",
-    alignItems: "center",
-    alignSelf: "center",
-  },
-  checkmarkText: {
-    color: "#FFF",
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  formContainer: {
-    backgroundColor: "#FFF",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  formTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 15,
-  },
-  inputGroup: {
-    marginBottom: 15,
-  },
-  inputLabel: {
-    fontSize: 13,
-    color: "#666",
-    marginBottom: 8,
-    fontWeight: "500",
-  },
-  input: {
-    backgroundColor: "#F5F5F5",
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 14,
-    color: "#333",
-  },
-  textArea: {
-    height: 80,
-    textAlignVertical: "top",
-  },
-  pointsInfo: {
-    backgroundColor: "#E8F5E9",
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 15,
-  },
-  pointsText: {
-    fontSize: 14,
-    color: "#2E7D32",
-    textAlign: "center",
-  },
-  pointsValue: {
-    fontWeight: "bold",
-    fontSize: 16,
-  },
-  donateButton: {
-    backgroundColor: "#4CAF50",
-    borderRadius: 10,
-    padding: 15,
-    alignItems: "center",
-  },
-  donateButtonDisabled: {
-    backgroundColor: "#A5D6A7",
-  },
-  donateButtonText: {
-    color: "#FFF",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  emptyContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 30,
-  },
-  emptyText: {
-    fontSize: 14,
-    color: "#999",
-  },
-});

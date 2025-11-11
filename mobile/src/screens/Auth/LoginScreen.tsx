@@ -4,12 +4,12 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
   Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
 } from "react-native";
+import { LogIn, Mail, Lock } from "lucide-react-native";
 import { useAuthStore } from "../../store/authStore";
 import { COLORS } from "../../constants";
 
@@ -38,49 +38,59 @@ export default function LoginScreen({ navigation }: any) {
   };
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.content}>
+    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} className="flex-1 bg-gray-50">
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+        <View className="flex-1 p-6 justify-center">
           {/* Logo */}
-          <View style={styles.logoContainer}>
-            <Text style={styles.logo}>🍽️</Text>
-            <Text style={styles.title}>MakanSikScan</Text>
-            <Text style={styles.subtitle}>Scan, Save, Savor</Text>
+          <View className="items-center mb-12">
+            <Text className="text-6xl mb-4">🍽️</Text>
+            <Text className="text-3xl font-bold mb-2" style={{ color: COLORS.primary }}>MakanSikScan</Text>
+            <Text className="text-base text-gray-600">Scan, Save, Savor</Text>
           </View>
 
           {/* Form */}
-          <View style={styles.form}>
-            <Text style={styles.label}>Email</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter your email"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              editable={!isLoading}
-            />
+          <View className="w-full">
+            <Text className="text-sm font-semibold text-gray-900 mb-2">Email</Text>
+            <View className="flex-row items-center bg-white border border-gray-300 rounded-xl px-4 py-3 mb-5">
+              <Mail size={20} color="#9CA3AF" />
+              <TextInput
+                className="flex-1 text-base text-gray-900 ml-3"
+                placeholder="Enter your email"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                editable={!isLoading}
+                placeholderTextColor="#9CA3AF"
+              />
+            </View>
 
-            <Text style={styles.label}>Password</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter your password"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              editable={!isLoading}
-            />
+            <Text className="text-sm font-semibold text-gray-900 mb-2">Password</Text>
+            <View className="flex-row items-center bg-white border border-gray-300 rounded-xl px-4 py-3 mb-5">
+              <Lock size={20} color="#9CA3AF" />
+              <TextInput
+                className="flex-1 text-base text-gray-900 ml-3"
+                placeholder="Enter your password"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+                editable={!isLoading}
+                placeholderTextColor="#9CA3AF"
+              />
+            </View>
 
             <TouchableOpacity
-              style={[styles.button, isLoading && styles.buttonDisabled]}
+              className={`rounded-xl p-4 items-center mt-2 flex-row justify-center ${isLoading ? "opacity-60" : ""}`}
+              style={{ backgroundColor: COLORS.primary }}
               onPress={handleLogin}
               disabled={isLoading}>
-              <Text style={styles.buttonText}>{isLoading ? "Logging in..." : "Login"}</Text>
+              <LogIn size={20} color="#FFFFFF" />
+              <Text className="text-white text-base font-semibold ml-2">{isLoading ? "Logging in..." : "Login"}</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.linkButton} onPress={() => navigation.navigate("Register")} disabled={isLoading}>
-              <Text style={styles.linkText}>
-                Don't have an account? <Text style={styles.linkTextBold}>Register</Text>
+            <TouchableOpacity className="mt-6 items-center" onPress={() => navigation.navigate("Register")} disabled={isLoading}>
+              <Text className="text-sm text-gray-600">
+                Don't have an account? <Text className="font-semibold" style={{ color: COLORS.primary }}>Register</Text>
               </Text>
             </TouchableOpacity>
           </View>
@@ -89,81 +99,3 @@ export default function LoginScreen({ navigation }: any) {
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  scrollContent: {
-    flexGrow: 1,
-  },
-  content: {
-    flex: 1,
-    padding: 24,
-    justifyContent: "center",
-  },
-  logoContainer: {
-    alignItems: "center",
-    marginBottom: 48,
-  },
-  logo: {
-    fontSize: 64,
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: COLORS.primary,
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: COLORS.textSecondary,
-  },
-  form: {
-    width: "100%",
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: COLORS.text,
-    marginBottom: 8,
-  },
-  input: {
-    backgroundColor: COLORS.card,
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  button: {
-    backgroundColor: COLORS.primary,
-    borderRadius: 12,
-    padding: 16,
-    alignItems: "center",
-    marginTop: 8,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  buttonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  linkButton: {
-    marginTop: 24,
-    alignItems: "center",
-  },
-  linkText: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-  },
-  linkTextBold: {
-    color: COLORS.primary,
-    fontWeight: "600",
-  },
-});

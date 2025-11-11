@@ -78,7 +78,8 @@ class ApiService {
     const { data } = await this.api.get<ApiResponse<Food[]>>("/foods", {
       params: { page, limit },
     });
-    return { foods: data.data, total: data.meta?.total || 0 };
+    console.log("📊 getFoods response:", JSON.stringify(data, null, 2));
+    return { foods: data.data, total: data.meta?.total_items || data.meta?.total || 0 };
   }
 
   async getFood(id: string): Promise<Food> {
@@ -91,18 +92,30 @@ class ApiService {
     return data.data;
   }
 
-  async scanFood(scanData: ScanFoodRequest): Promise<Food> {
+  async scanFood(scanData: ScanFoodRequest): Promise<any> {
     const { data } = await this.api.post<ApiResponse<any>>("/foods/scan", scanData);
+    // Backend now returns just scan result without saving
+    return data.data;
+  }
 
-    // Backend returns { food: Food, confidence: number }
-    const food = data.data.food;
+  async addScannedFood(foodData: any): Promise<Food> {
+    const { data } = await this.api.post<ApiResponse<Food>>("/foods/add-scanned", foodData);
+    return data.data;
+  }
 
-    if (!food || !food.id) {
-      console.error("Invalid food object received:", food);
-      throw new Error("Invalid response from server: food object is missing or has no ID");
-    }
+  async checkDuplicate(name: string): Promise<{ has_duplicates: boolean; duplicates: Food[]; count: number }> {
+    const { data } = await this.api.get<ApiResponse<{ has_duplicates: boolean; duplicates: Food[]; count: number }>>(
+      "/foods/check-duplicate",
+      {
+        params: { name },
+      }
+    );
+    return data.data;
+  }
 
-    return food;
+  async updateStock(id: string, quantity: number): Promise<Food> {
+    const { data } = await this.api.patch<ApiResponse<Food>>(`/foods/${id}/stock`, { quantity });
+    return data.data;
   }
 
   async updateFood(id: string, foodData: Partial<Food>): Promise<Food> {
@@ -122,7 +135,8 @@ class ApiService {
   }
 
   async getFoodStats(): Promise<Statistics> {
-    const { data } = await this.api.get<ApiResponse<Statistics>>("/foods/stats");
+    const { data } = await this.api.get<ApiResponse<Statistics>>("/foods/statistics");
+    console.log("📊 getFoodStats response:", JSON.stringify(data, null, 2));
     return data.data;
   }
 
@@ -244,23 +258,34 @@ class ApiService {
     return { transactions: data.data, total: data.meta?.total || 0 };
   }
 
-  async getVouchers(store?: string, page = 1, limit = 20): Promise<{ vouchers: Voucher[]; total: number }> {
-    const { data } = await this.api.get<ApiResponse<Voucher[]>>("/rewards/vouchers", {
-      params: { store, page, limit },
-    });
-    return { vouchers: data.data, total: data.meta?.total || 0 };
+  // ===== VOUCHERS =====
+  async getAllVouchers(): Promise<Voucher[]> {
+    const { data } = await this.api.get<ApiResponse<Voucher[]>>("/vouchers");
+    return data.data;
+  }
+
+  async getVoucherById(id: string): Promise<Voucher> {
+    const { data } = await this.api.get<ApiResponse<Voucher>>(`/vouchers/${id}`);
+    return data.data;
+  }
+
+  async getVouchersByCategory(category: string): Promise<Voucher[]> {
+    const { data } = await this.api.get<ApiResponse<Voucher[]>>(`/vouchers/category/${category}`);
+    return data.data;
   }
 
   async redeemVoucher(voucherId: string): Promise<VoucherRedemption> {
-    const { data } = await this.api.post<ApiResponse<VoucherRedemption>>(`/rewards/vouchers/${voucherId}/redeem`);
+    const { data } = await this.api.post<ApiResponse<VoucherRedemption>>(`/vouchers/${voucherId}/redeem`);
     return data.data;
   }
 
-  async getMyVouchers(status?: string): Promise<VoucherRedemption[]> {
-    const { data } = await this.api.get<ApiResponse<VoucherRedemption[]>>("/rewards/my-vouchers", {
-      params: { status },
-    });
+  async getUserRedemptions(): Promise<VoucherRedemption[]> {
+    const { data } = await this.api.get<ApiResponse<VoucherRedemption[]>>("/vouchers/redemptions");
     return data.data;
+  }
+
+  async markRedemptionAsUsed(redemptionId: string): Promise<void> {
+    await this.api.post(`/vouchers/redemptions/${redemptionId}/use`);
   }
 
   // ===== DONATIONS =====
@@ -274,8 +299,13 @@ class ApiService {
     return data;
   }
 
+  async getDonatableFoods(): Promise<ApiResponse<Food[]>> {
+    const { data } = await this.api.get<ApiResponse<Food[]>>("/foods/donatable");
+    return data;
+  }
+
   async createDonation(donationData: {
-    food_id: number;
+    food_id: string; // Changed to string (UUID)
     market_id: number;
     quantity: number;
     notes?: string;

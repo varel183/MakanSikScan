@@ -19,6 +19,7 @@ func SetupRoutes(router *gin.Engine, db *gorm.DB, cfg *config.Config) {
 	recipeRepo := repository.NewRecipeRepository(db)
 	cartRepo := repository.NewCartRepository(db)
 	rewardRepo := repository.NewRewardRepository(db)
+	voucherRepo := repository.NewVoucherRepository(db)
 
 	// Initialize services
 	authService := service.NewAuthService(userRepo, cfg)
@@ -28,6 +29,7 @@ func SetupRoutes(router *gin.Engine, db *gorm.DB, cfg *config.Config) {
 	recipeService := service.NewRecipeService(recipeRepo, foodRepo, cfg)
 	cartService := service.NewCartService(cartRepo)
 	rewardService := service.NewRewardService(rewardRepo)
+	voucherService := service.NewVoucherService(voucherRepo, rewardRepo)
 
 	// Initialize handlers
 	authHandler := handler.NewAuthHandler(authService)
@@ -36,6 +38,7 @@ func SetupRoutes(router *gin.Engine, db *gorm.DB, cfg *config.Config) {
 	recipeHandler := handler.NewRecipeHandler(recipeService)
 	cartHandler := handler.NewCartHandler(cartService)
 	rewardHandler := handler.NewRewardHandler(rewardService)
+	voucherHandler := handler.NewVoucherHandler(voucherService)
 
 	// Apply CORS middleware
 	router.Use(middleware.CORSMiddleware())
@@ -66,6 +69,7 @@ func SetupRoutes(router *gin.Engine, db *gorm.DB, cfg *config.Config) {
 		RegisterRecipeRoutes(v1, recipeHandler, &cfg.JWT)
 		RegisterCartRoutes(v1, cartHandler, &cfg.JWT)
 		RegisterRewardRoutes(v1, rewardHandler, &cfg.JWT)
+		SetupVoucherRoutes(v1, voucherHandler, &cfg.JWT)
 	} // 404 handler
 	router.NoRoute(func(c *gin.Context) {
 		c.JSON(404, gin.H{

@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { StatusBar } from "expo-status-bar";
 import { View, Text, ActivityIndicator } from "react-native";
+import { Home, Heart, ChefHat, ShoppingCart, Gift, User } from "lucide-react-native";
 
 // Store
 import { useAuthStore } from "./src/store/authStore";
@@ -22,9 +23,13 @@ import RewardsScreen from "./src/screens/Rewards/RewardsScreen";
 // Additional Screens (will be created)
 import ScanFoodScreen from "./src/screens/Scan/ScanFoodScreen";
 import FoodDetailScreen from "./src/screens/Food/FoodDetailScreen";
+import AddFoodManuallyScreen from "./src/screens/Food/AddFoodManuallyScreen";
+import AllFoodsScreen from "./src/screens/Food/AllFoodsScreen";
 import RecipeDetailScreen from "./src/screens/Recipe/RecipeDetailScreen";
 import ProfileScreen from "./src/screens/Profile/ProfileScreen";
 import SelectFoodForDonationScreen from "./src/screens/Donation/SelectFoodForDonationScreen";
+import VoucherDetailScreen from "./src/screens/Rewards/VoucherDetailScreen";
+import MyRedemptionsScreen from "./src/screens/Rewards/MyRedemptionsScreen";
 
 import { COLORS } from "./src/constants";
 
@@ -39,9 +44,11 @@ function MainTabs() {
         tabBarActiveTintColor: COLORS.primary,
         tabBarInactiveTintColor: COLORS.textSecondary,
         tabBarStyle: {
-          paddingBottom: 8,
+          paddingBottom: 12,
           paddingTop: 8,
-          height: 60,
+          height: 70,
+          borderTopWidth: 1,
+          borderTopColor: "#E5E7EB",
         },
       }}>
       <Tab.Screen
@@ -49,7 +56,7 @@ function MainTabs() {
         component={HomeScreen}
         options={{
           title: "Home",
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 24 }}>🏠</Text>,
+          tabBarIcon: ({ color }) => <Home size={24} color={color} />,
         }}
       />
       <Tab.Screen
@@ -57,7 +64,7 @@ function MainTabs() {
         component={DonationScreen}
         options={{
           title: "Donation",
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 24 }}>❤️</Text>,
+          tabBarIcon: ({ color }) => <Heart size={24} color={color} />,
         }}
       />
       <Tab.Screen
@@ -65,7 +72,7 @@ function MainTabs() {
         component={RecipeScreen}
         options={{
           title: "Recipes",
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 24 }}>🍳</Text>,
+          tabBarIcon: ({ color }) => <ChefHat size={24} color={color} />,
         }}
       />
       <Tab.Screen
@@ -73,7 +80,7 @@ function MainTabs() {
         component={CartScreen}
         options={{
           title: "Cart",
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 24 }}>🛒</Text>,
+          tabBarIcon: ({ color }) => <ShoppingCart size={24} color={color} />,
         }}
       />
       <Tab.Screen
@@ -81,7 +88,7 @@ function MainTabs() {
         component={RewardsScreen}
         options={{
           title: "Rewards",
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 24 }}>🎁</Text>,
+          tabBarIcon: ({ color }) => <Gift size={24} color={color} />,
         }}
       />
       <Tab.Screen
@@ -89,7 +96,7 @@ function MainTabs() {
         component={ProfileScreen}
         options={{
           title: "Profile",
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 24 }}>👤</Text>,
+          tabBarIcon: ({ color }) => <User size={24} color={color} />,
         }}
       />
     </Tab.Navigator>
@@ -112,6 +119,8 @@ function MainStack() {
     <Stack.Navigator>
       <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
       <Stack.Screen name="ScanFood" component={ScanFoodScreen} options={{ title: "Scan Food" }} />
+      <Stack.Screen name="AddFoodManually" component={AddFoodManuallyScreen} options={{ title: "Add Food Manually" }} />
+      <Stack.Screen name="AllFoods" component={AllFoodsScreen} options={{ title: "All Foods" }} />
       <Stack.Screen name="FoodDetail" component={FoodDetailScreen} options={{ title: "Food Detail" }} />
       <Stack.Screen name="RecipeDetail" component={RecipeDetailScreen} options={{ title: "Recipe" }} />
       <Stack.Screen
@@ -119,6 +128,8 @@ function MainStack() {
         component={SelectFoodForDonationScreen}
         options={{ title: "Select Food to Donate" }}
       />
+      <Stack.Screen name="VoucherDetail" component={VoucherDetailScreen} options={{ title: "Voucher Detail" }} />
+      <Stack.Screen name="MyRedemptions" component={MyRedemptionsScreen} options={{ title: "My Vouchers" }} />
     </Stack.Navigator>
   );
 }

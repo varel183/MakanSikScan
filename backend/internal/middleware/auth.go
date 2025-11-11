@@ -38,17 +38,27 @@ func AuthMiddleware(jwtConfig *config.JWTConfig) gin.HandlerFunc {
 			return
 		}
 
-		// Set userID in context
+		// Set userID in context (both UUID and string format)
 		c.Set("userID", userID)
+		c.Set("user_id", userID.String()) // Add string format for donation handlers
 		c.Next()
 	}
 }
 
-// GetUserID retrieves user ID from context
+// GetUserID retrieves user ID from context as UUID
 func GetUserID(c *gin.Context) (uuid.UUID, error) {
 	value, exists := c.Get("userID")
 	if !exists {
 		return uuid.Nil, nil
 	}
 	return value.(uuid.UUID), nil
+}
+
+// GetUserIDString retrieves user ID from context as string
+func GetUserIDString(c *gin.Context) (string, error) {
+	value, exists := c.Get("user_id")
+	if !exists {
+		return "", nil
+	}
+	return value.(string), nil
 }

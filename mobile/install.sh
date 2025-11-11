@@ -6,7 +6,7 @@ echo ""
 
 # Check if in mobile directory
 if [ ! -f "package.json" ]; then
-    echo "❌ Please run this script from the mobile directory"
+    echo "Please run this script from the mobile directory"
     echo "   cd mobile && bash install.sh"
     exit 1
 fi
@@ -15,12 +15,12 @@ echo "📦 Installing dependencies..."
 npm install --legacy-peer-deps
 
 if [ $? -ne 0 ]; then
-    echo "❌ Failed to install dependencies"
+    echo "Failed to install dependencies"
     exit 1
 fi
 
 echo ""
-echo "✅ Installation complete!"
+echo "Installation complete!"
 echo ""
 echo "🚀 Next steps:"
 echo ""

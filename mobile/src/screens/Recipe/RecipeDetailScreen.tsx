@@ -1,5 +1,6 @@
 import React from "react";
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Alert } from "react-native";
+import { Clock, Users, TrendingUp, Flame, ShoppingCart, CheckCircle } from "lucide-react-native";
 import { Recipe } from "../../types";
 import { COLORS } from "../../constants";
 
@@ -24,131 +25,135 @@ export default function RecipeDetailScreen({ route, navigation }: any) {
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.recipeIcon}>
-          <Text style={styles.recipeEmoji}>🍳</Text>
+    <ScrollView className="flex-1 bg-gray-50">
+      <View className="bg-white p-5 items-center">
+        <View className="w-20 h-20 rounded-full bg-gray-100 justify-center items-center mb-4">
+          <Text className="text-4xl">🍳</Text>
         </View>
-        <Text style={styles.title}>{recipe.title}</Text>
-        <Text style={styles.description}>{recipe.description}</Text>
+        <Text className="text-2xl font-bold text-gray-900 text-center mb-2">{recipe.title}</Text>
+        <Text className="text-sm text-gray-600 text-center leading-5">{recipe.description}</Text>
 
-        <View style={styles.metaRow}>
-          <View style={styles.metaCard}>
-            <Text style={styles.metaIcon}>⏱️</Text>
-            <Text style={styles.metaLabel}>Prep</Text>
-            <Text style={styles.metaValue}>{recipe.prep_time}m</Text>
+        <View className="flex-row gap-3 mt-5">
+          <View className="flex-1 bg-gray-100 rounded-xl p-3 items-center">
+            <Clock size={24} color={COLORS.primary} />
+            <Text className="text-xs text-gray-600 mt-1">Prep</Text>
+            <Text className="text-sm font-semibold text-gray-900">{recipe.prep_time}m</Text>
           </View>
-          <View style={styles.metaCard}>
-            <Text style={styles.metaIcon}>🔥</Text>
-            <Text style={styles.metaLabel}>Cook</Text>
-            <Text style={styles.metaValue}>{recipe.cook_time}m</Text>
+          <View className="flex-1 bg-gray-100 rounded-xl p-3 items-center">
+            <Flame size={24} color={COLORS.primary} />
+            <Text className="text-xs text-gray-600 mt-1">Cook</Text>
+            <Text className="text-sm font-semibold text-gray-900">{recipe.cook_time}m</Text>
           </View>
-          <View style={styles.metaCard}>
-            <Text style={styles.metaIcon}>👥</Text>
-            <Text style={styles.metaLabel}>Servings</Text>
-            <Text style={styles.metaValue}>{recipe.servings}</Text>
+          <View className="flex-1 bg-gray-100 rounded-xl p-3 items-center">
+            <Users size={24} color={COLORS.primary} />
+            <Text className="text-xs text-gray-600 mt-1">Servings</Text>
+            <Text className="text-sm font-semibold text-gray-900">{recipe.servings}</Text>
           </View>
-          <View style={styles.metaCard}>
-            <Text style={styles.metaIcon}>📊</Text>
-            <Text style={styles.metaLabel}>Level</Text>
-            <Text style={styles.metaValue}>{recipe.difficulty}</Text>
+          <View className="flex-1 bg-gray-100 rounded-xl p-3 items-center">
+            <TrendingUp size={24} color={COLORS.primary} />
+            <Text className="text-xs text-gray-600 mt-1">Level</Text>
+            <Text className="text-sm font-semibold text-gray-900">{recipe.difficulty}</Text>
           </View>
         </View>
       </View>
 
       {/* Nutrition */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Nutrition (per serving)</Text>
-        <View style={styles.nutritionGrid}>
-          <View style={styles.nutritionItem}>
-            <Text style={styles.nutritionValue}>{recipe.calories}</Text>
-            <Text style={styles.nutritionLabel}>Calories</Text>
+      <View className="bg-white p-5 mt-3">
+        <Text className="text-lg font-semibold text-gray-900 mb-3">Nutrition (per serving)</Text>
+        <View className="flex-row gap-3">
+          <View className="flex-1 bg-gray-100 rounded-lg p-3 items-center">
+            <Text className="text-xl font-bold" style={{ color: COLORS.primary }}>{recipe.calories}</Text>
+            <Text className="text-xs text-gray-600 mt-1">Calories</Text>
           </View>
-          <View style={styles.nutritionItem}>
-            <Text style={styles.nutritionValue}>{recipe.protein}g</Text>
-            <Text style={styles.nutritionLabel}>Protein</Text>
+          <View className="flex-1 bg-gray-100 rounded-lg p-3 items-center">
+            <Text className="text-xl font-bold" style={{ color: COLORS.primary }}>{recipe.protein}g</Text>
+            <Text className="text-xs text-gray-600 mt-1">Protein</Text>
           </View>
-          <View style={styles.nutritionItem}>
-            <Text style={styles.nutritionValue}>{recipe.carbs}g</Text>
-            <Text style={styles.nutritionLabel}>Carbs</Text>
+          <View className="flex-1 bg-gray-100 rounded-lg p-3 items-center">
+            <Text className="text-xl font-bold" style={{ color: COLORS.primary }}>{recipe.carbs}g</Text>
+            <Text className="text-xs text-gray-600 mt-1">Carbs</Text>
           </View>
-          <View style={styles.nutritionItem}>
-            <Text style={styles.nutritionValue}>{recipe.fat}g</Text>
-            <Text style={styles.nutritionLabel}>Fat</Text>
+          <View className="flex-1 bg-gray-100 rounded-lg p-3 items-center">
+            <Text className="text-xl font-bold" style={{ color: COLORS.primary }}>{recipe.fat}g</Text>
+            <Text className="text-xs text-gray-600 mt-1">Fat</Text>
           </View>
         </View>
       </View>
 
       {/* Ingredients */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Ingredients</Text>
+      <View className="bg-white p-5 mt-3">
+        <Text className="text-lg font-semibold text-gray-900 mb-3">Ingredients</Text>
         {recipe.ingredients.map((ingredient, index) => (
-          <View key={index} style={styles.ingredientItem}>
-            <Text style={styles.ingredientBullet}>•</Text>
-            <Text style={styles.ingredientText}>{ingredient}</Text>
+          <View key={index} className="flex-row mb-3">
+            <Text className="text-base mr-2" style={{ color: COLORS.primary }}>•</Text>
+            <Text className="text-sm text-gray-900 flex-1 leading-5">{ingredient}</Text>
           </View>
         ))}
       </View>
 
       {/* Missing Items Alert */}
       {recipe.missing_items && recipe.missing_items.length > 0 && (
-        <View style={styles.missingSection}>
-          <Text style={styles.missingSectionTitle}>Missing Items ({recipe.missing_items.length})</Text>
+        <View className="bg-orange-50 p-5 mt-3">
+          <Text className="text-base font-semibold mb-3" style={{ color: COLORS.warning }}>Missing Items ({recipe.missing_items.length})</Text>
           {recipe.missing_items.map((item, index) => (
-            <View key={index} style={styles.missingItem}>
-              <Text style={styles.missingBullet}>🛒</Text>
-              <Text style={styles.missingText}>{item}</Text>
+            <View key={index} className="flex-row items-center mb-2">
+              <ShoppingCart size={16} color={COLORS.warning} />
+              <Text className="text-sm text-gray-900 ml-2 flex-1">{item}</Text>
             </View>
           ))}
-          <TouchableOpacity style={styles.addToCartButton} onPress={handleAddToCart}>
-            <Text style={styles.addToCartText}>Add Missing Items to Cart</Text>
+          <TouchableOpacity
+            className="rounded-xl py-3 items-center mt-3 flex-row justify-center"
+            style={{ backgroundColor: COLORS.primary }}
+            onPress={handleAddToCart}>
+            <ShoppingCart size={16} color="#FFFFFF" />
+            <Text className="text-white text-sm font-semibold ml-2">Add Missing Items to Cart</Text>
           </TouchableOpacity>
         </View>
       )}
 
       {/* Instructions */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Instructions</Text>
+      <View className="bg-white p-5 mt-3">
+        <Text className="text-lg font-semibold text-gray-900 mb-3">Instructions</Text>
         {recipe.instructions.map((instruction, index) => (
-          <View key={index} style={styles.instructionItem}>
-            <View style={styles.stepNumber}>
-              <Text style={styles.stepNumberText}>{index + 1}</Text>
+          <View key={index} className="flex-row mb-5">
+            <View className="w-8 h-8 rounded-full justify-center items-center mr-3" style={{ backgroundColor: COLORS.primary }}>
+              <Text className="text-white font-bold text-sm">{index + 1}</Text>
             </View>
-            <Text style={styles.instructionText}>{instruction}</Text>
+            <Text className="text-sm text-gray-900 flex-1 leading-5">{instruction}</Text>
           </View>
         ))}
       </View>
 
       {/* Tips */}
       {recipe.tips && recipe.tips.length > 0 && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>💡 Chef's Tips</Text>
+        <View className="bg-white p-5 mt-3">
+          <Text className="text-lg font-semibold text-gray-900 mb-3">💡 Chef's Tips</Text>
           {recipe.tips.map((tip, index) => (
-            <View key={index} style={styles.tipItem}>
-              <Text style={styles.tipBullet}>✨</Text>
-              <Text style={styles.tipText}>{tip}</Text>
+            <View key={index} className="flex-row bg-gray-100 p-3 rounded-lg mb-3">
+              <Text className="text-base mr-2">✨</Text>
+              <Text className="text-sm text-gray-900 flex-1 leading-5">{tip}</Text>
             </View>
           ))}
         </View>
       )}
 
       {/* Health Info */}
-      <View style={[styles.section, styles.lastSection]}>
-        <Text style={styles.sectionTitle}>Health Information</Text>
-        <View style={styles.healthTags}>
+      <View className="bg-white p-5 mt-3 mb-5">
+        <Text className="text-lg font-semibold text-gray-900 mb-3">Health Information</Text>
+        <View className="flex-row flex-wrap gap-2">
           {recipe.is_halal && (
-            <View style={[styles.healthTag, { backgroundColor: "#E8F5E9" }]}>
-              <Text style={styles.healthTagText}>✓ Halal</Text>
+            <View className="bg-green-50 px-3 py-2 rounded-full">
+              <Text className="text-xs font-medium" style={{ color: COLORS.success }}>✓ Halal</Text>
             </View>
           )}
           {recipe.is_vegetarian && (
-            <View style={[styles.healthTag, { backgroundColor: "#E8F5E9" }]}>
-              <Text style={styles.healthTagText}>🌱 Vegetarian</Text>
+            <View className="bg-green-50 px-3 py-2 rounded-full">
+              <Text className="text-xs font-medium" style={{ color: COLORS.success }}>🌱 Vegetarian</Text>
             </View>
           )}
           {recipe.is_vegan && (
-            <View style={[styles.healthTag, { backgroundColor: "#E8F5E9" }]}>
-              <Text style={styles.healthTagText}>🥗 Vegan</Text>
+            <View className="bg-green-50 px-3 py-2 rounded-full">
+              <Text className="text-xs font-medium" style={{ color: COLORS.success }}>🥗 Vegan</Text>
             </View>
           )}
         </View>
@@ -156,210 +161,3 @@ export default function RecipeDetailScreen({ route, navigation }: any) {
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  header: {
-    backgroundColor: "#FFFFFF",
-    padding: 20,
-    alignItems: "center",
-  },
-  recipeIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: COLORS.card,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  recipeEmoji: {
-    fontSize: 40,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: COLORS.text,
-    textAlign: "center",
-    marginBottom: 8,
-  },
-  description: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    textAlign: "center",
-    lineHeight: 20,
-    marginBottom: 20,
-  },
-  metaRow: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  metaCard: {
-    flex: 1,
-    backgroundColor: COLORS.card,
-    borderRadius: 12,
-    padding: 12,
-    alignItems: "center",
-  },
-  metaIcon: {
-    fontSize: 24,
-    marginBottom: 4,
-  },
-  metaLabel: {
-    fontSize: 11,
-    color: COLORS.textSecondary,
-    marginBottom: 2,
-  },
-  metaValue: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: COLORS.text,
-  },
-  section: {
-    backgroundColor: "#FFFFFF",
-    padding: 20,
-    marginTop: 12,
-  },
-  lastSection: {
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: COLORS.text,
-    marginBottom: 16,
-  },
-  nutritionGrid: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  nutritionItem: {
-    flex: 1,
-    backgroundColor: COLORS.card,
-    borderRadius: 8,
-    padding: 12,
-    alignItems: "center",
-  },
-  nutritionValue: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: COLORS.primary,
-    marginBottom: 4,
-  },
-  nutritionLabel: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-  },
-  ingredientItem: {
-    flexDirection: "row",
-    marginBottom: 12,
-  },
-  ingredientBullet: {
-    fontSize: 16,
-    color: COLORS.primary,
-    marginRight: 8,
-    width: 20,
-  },
-  ingredientText: {
-    fontSize: 14,
-    color: COLORS.text,
-    flex: 1,
-    lineHeight: 20,
-  },
-  missingSection: {
-    backgroundColor: "#FFF3E0",
-    padding: 20,
-    marginTop: 12,
-  },
-  missingSectionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: COLORS.warning,
-    marginBottom: 12,
-  },
-  missingItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  missingBullet: {
-    fontSize: 16,
-    marginRight: 8,
-  },
-  missingText: {
-    fontSize: 14,
-    color: COLORS.text,
-    flex: 1,
-  },
-  addToCartButton: {
-    backgroundColor: COLORS.primary,
-    paddingVertical: 12,
-    borderRadius: 8,
-    marginTop: 12,
-    alignItems: "center",
-  },
-  addToCartText: {
-    color: "#FFFFFF",
-    fontWeight: "600",
-    fontSize: 14,
-  },
-  instructionItem: {
-    flexDirection: "row",
-    marginBottom: 20,
-  },
-  stepNumber: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: COLORS.primary,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-  stepNumberText: {
-    color: "#FFFFFF",
-    fontWeight: "bold",
-    fontSize: 14,
-  },
-  instructionText: {
-    fontSize: 14,
-    color: COLORS.text,
-    flex: 1,
-    lineHeight: 20,
-  },
-  tipItem: {
-    flexDirection: "row",
-    backgroundColor: COLORS.card,
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 12,
-  },
-  tipBullet: {
-    fontSize: 16,
-    marginRight: 8,
-  },
-  tipText: {
-    fontSize: 14,
-    color: COLORS.text,
-    flex: 1,
-    lineHeight: 20,
-  },
-  healthTags: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  healthTag: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  healthTagText: {
-    fontSize: 13,
-    fontWeight: "500",
-    color: COLORS.success,
-  },
-});

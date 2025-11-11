@@ -4,12 +4,12 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
   Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
 } from "react-native";
+import { UserPlus, User, Mail, Lock } from "lucide-react-native";
 import { useAuthStore } from "../../store/authStore";
 import { COLORS } from "../../constants";
 
@@ -52,76 +52,94 @@ export default function RegisterScreen({ navigation }: any) {
   };
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : "height"}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.content}>
-          <Text style={styles.logo}>🍽️</Text>
-          <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>Join MakanSikScan to manage your food smartly</Text>
+    <KeyboardAvoidingView className="flex-1 bg-gray-50" behavior={Platform.OS === "ios" ? "padding" : "height"}>
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+        <View className="flex-1 justify-center p-6">
+          <Text className="text-6xl text-center mb-4">🍽️</Text>
+          <Text className="text-3xl font-bold text-center text-gray-900 mb-2">Create Account</Text>
+          <Text className="text-sm text-center text-gray-600 mb-8">Join MakanSikScan to manage your food smartly</Text>
 
-          <View style={styles.form}>
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Full Name</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter your name"
-                value={name}
-                onChangeText={setName}
-                autoCapitalize="words"
-                editable={!isLoading}
-              />
+          <View className="w-full">
+            <View className="mb-4">
+              <Text className="text-sm font-medium text-gray-900 mb-2">Full Name</Text>
+              <View className="flex-row items-center bg-white border border-gray-300 rounded-lg px-3 py-3">
+                <User size={20} color="#9CA3AF" />
+                <TextInput
+                  className="flex-1 text-base text-gray-900 ml-3"
+                  placeholder="Enter your name"
+                  value={name}
+                  onChangeText={setName}
+                  autoCapitalize="words"
+                  editable={!isLoading}
+                  placeholderTextColor="#9CA3AF"
+                />
+              </View>
             </View>
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Email</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter your email"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                editable={!isLoading}
-              />
+            <View className="mb-4">
+              <Text className="text-sm font-medium text-gray-900 mb-2">Email</Text>
+              <View className="flex-row items-center bg-white border border-gray-300 rounded-lg px-3 py-3">
+                <Mail size={20} color="#9CA3AF" />
+                <TextInput
+                  className="flex-1 text-base text-gray-900 ml-3"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  editable={!isLoading}
+                  placeholderTextColor="#9CA3AF"
+                />
+              </View>
             </View>
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Password</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter password (min 6 characters)"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                autoCapitalize="none"
-                editable={!isLoading}
-              />
+            <View className="mb-4">
+              <Text className="text-sm font-medium text-gray-900 mb-2">Password</Text>
+              <View className="flex-row items-center bg-white border border-gray-300 rounded-lg px-3 py-3">
+                <Lock size={20} color="#9CA3AF" />
+                <TextInput
+                  className="flex-1 text-base text-gray-900 ml-3"
+                  placeholder="Enter password (min 6 characters)"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry
+                  autoCapitalize="none"
+                  editable={!isLoading}
+                  placeholderTextColor="#9CA3AF"
+                />
+              </View>
             </View>
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Confirm Password</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Re-enter password"
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                secureTextEntry
-                autoCapitalize="none"
-                editable={!isLoading}
-              />
+            <View className="mb-4">
+              <Text className="text-sm font-medium text-gray-900 mb-2">Confirm Password</Text>
+              <View className="flex-row items-center bg-white border border-gray-300 rounded-lg px-3 py-3">
+                <Lock size={20} color="#9CA3AF" />
+                <TextInput
+                  className="flex-1 text-base text-gray-900 ml-3"
+                  placeholder="Re-enter password"
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  secureTextEntry
+                  autoCapitalize="none"
+                  editable={!isLoading}
+                  placeholderTextColor="#9CA3AF"
+                />
+              </View>
             </View>
 
             <TouchableOpacity
-              style={[styles.button, isLoading && styles.buttonDisabled]}
+              className={`p-4 rounded-lg items-center mt-2 flex-row justify-center ${isLoading ? "opacity-60" : ""}`}
+              style={{ backgroundColor: COLORS.primary }}
               onPress={handleRegister}
               disabled={isLoading}>
-              <Text style={styles.buttonText}>{isLoading ? "Creating Account..." : "Sign Up"}</Text>
+              <UserPlus size={20} color="#FFFFFF" />
+              <Text className="text-white text-base font-semibold ml-2">{isLoading ? "Creating Account..." : "Sign Up"}</Text>
             </TouchableOpacity>
 
-            <View style={styles.footer}>
-              <Text style={styles.footerText}>Already have an account? </Text>
+            <View className="flex-row justify-center mt-6">
+              <Text className="text-gray-600">Already have an account? </Text>
               <TouchableOpacity onPress={() => navigation.navigate("Login")}>
-                <Text style={styles.link}>Sign In</Text>
+                <Text className="font-semibold" style={{ color: COLORS.primary }}>Sign In</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -130,83 +148,3 @@ export default function RegisterScreen({ navigation }: any) {
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  scrollContent: {
-    flexGrow: 1,
-  },
-  content: {
-    flex: 1,
-    justifyContent: "center",
-    padding: 24,
-  },
-  logo: {
-    fontSize: 64,
-    textAlign: "center",
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: "bold",
-    textAlign: "center",
-    color: COLORS.text,
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 14,
-    textAlign: "center",
-    color: COLORS.textSecondary,
-    marginBottom: 32,
-  },
-  form: {
-    width: "100%",
-  },
-  inputContainer: {
-    marginBottom: 16,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: COLORS.text,
-    marginBottom: 8,
-  },
-  input: {
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-  },
-  button: {
-    backgroundColor: COLORS.primary,
-    padding: 16,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 8,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  buttonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  footer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginTop: 24,
-  },
-  footerText: {
-    color: COLORS.textSecondary,
-  },
-  link: {
-    color: COLORS.primary,
-    fontWeight: "600",
-  },
-});

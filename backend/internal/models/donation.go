@@ -3,6 +3,7 @@ package models
 import (
 	"time"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -23,10 +24,10 @@ type DonationMarket struct {
 // Donation represents a food donation transaction
 type Donation struct {
 	ID           uint           `json:"id" gorm:"primaryKey"`
-	UserID       uint           `json:"user_id" gorm:"not null;index"`
-	User         User           `json:"user" gorm:"foreignKey:UserID"`
-	FoodID       uint           `json:"food_id" gorm:"not null;index"`
-	Food         Food           `json:"food" gorm:"foreignKey:FoodID"`
+	UserID       uuid.UUID      `json:"user_id" gorm:"type:uuid;not null;index"`
+	User         User           `json:"user,omitempty" gorm:"foreignKey:UserID"`
+	FoodID       uuid.UUID      `json:"food_id" gorm:"type:uuid;not null;index"`
+	Food         Food           `json:"food,omitempty" gorm:"foreignKey:FoodID"`
 	MarketID     uint           `json:"market_id" gorm:"not null;index"`
 	Market       DonationMarket `json:"market" gorm:"foreignKey:MarketID"`
 	Quantity     int            `json:"quantity" gorm:"not null"`

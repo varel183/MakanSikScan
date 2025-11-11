@@ -83,7 +83,7 @@ func (r *FoodRepository) FindExpiringSoon(userID uuid.UUID, days int) ([]models.
 	var foods []models.Food
 	expiryDate := time.Now().AddDate(0, 0, days)
 
-	err := r.db.Where("user_id = ? AND expiry_date IS NOT NULL AND expiry_date <= ? AND expiry_date > ?",
+	err := r.db.Where("user_id = ? AND expiry_date IS NOT NULL AND expiry_date <= ? AND expiry_date > ? AND quantity > 0",
 		userID, expiryDate, time.Now()).
 		Order("expiry_date ASC").
 		Find(&foods).Error
@@ -95,7 +95,7 @@ func (r *FoodRepository) FindExpiringSoon(userID uuid.UUID, days int) ([]models.
 func (r *FoodRepository) FindExpired(userID uuid.UUID) ([]models.Food, error) {
 	var foods []models.Food
 
-	err := r.db.Where("user_id = ? AND expiry_date IS NOT NULL AND expiry_date < ?", userID, time.Now()).
+	err := r.db.Where("user_id = ? AND expiry_date IS NOT NULL AND expiry_date < ? AND quantity > 0", userID, time.Now()).
 		Order("expiry_date DESC").
 		Find(&foods).Error
 
@@ -132,35 +132,35 @@ func (r *FoodRepository) BulkCreate(foods []models.Food) error {
 func (r *FoodRepository) GetStatistics(userID uuid.UUID) (map[string]interface{}, error) {
 	stats := make(map[string]interface{})
 
-	// Total items
+	// Total items (only count foods with quantity > 0)
 	var totalItems int64
-	if err := r.db.Model(&models.Food{}).Where("user_id = ?", userID).Count(&totalItems).Error; err != nil {
+	if err := r.db.Model(&models.Food{}).Where("user_id = ? AND quantity > 0", userID).Count(&totalItems).Error; err != nil {
 		return nil, err
 	}
 	stats["total_items"] = totalItems
 
-	// Items by category
+	// Items by category (only foods with quantity > 0)
 	var categoryStats []struct {
 		Category string
 		Count    int64
 	}
 	if err := r.db.Model(&models.Food{}).
 		Select("category, COUNT(*) as count").
-		Where("user_id = ?", userID).
+		Where("user_id = ? AND quantity > 0", userID).
 		Group("category").
 		Scan(&categoryStats).Error; err != nil {
 		return nil, err
 	}
 	stats["by_category"] = categoryStats
 
-	// Expiring soon (7 days)
-	expiringSoon, err := r.FindExpiringSoon(userID, 7)
+	// Expiring soon (3 days) - already filters quantity > 0
+	expiringSoon, err := r.FindExpiringSoon(userID, 3)
 	if err != nil {
 		return nil, err
 	}
-	stats["expiring_soon"] = len(expiringSoon)
+	stats["near_expiry"] = len(expiringSoon)
 
-	// Expired items
+	// Expired items - already filters quantity > 0
 	expired, err := r.FindExpired(userID)
 	if err != nil {
 		return nil, err
@@ -190,4 +190,13 @@ func (r *FoodRepository) SearchFood(userID uuid.UUID, query string, page, limit 
 		Find(&foods).Error
 
 	return foods, total, err
+}
+
+// FindByNameExact finds food items with exact name match (case-insensitive)
+func (r *FoodRepository) FindByNameExact(userID uuid.UUID, name string) ([]models.Food, error) {
+	var foods []models.Food
+	err := r.db.Where("user_id = ? AND LOWER(name) = LOWER(?)", userID, name).
+		Order("created_at DESC").
+		Find(&foods).Error
+	return foods, err
 }

@@ -2,7 +2,6 @@ package service
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/varel183/MakanSikScan/backend/internal/models"
@@ -40,26 +39,35 @@ func (s *DonationService) GetMarketByID(id uint) (*models.DonationMarket, error)
 	return s.donationRepo.GetMarketByID(id)
 }
 
-// CreateDonation creates a new donation and awards points
+// CreateDonation creates a new donation and awards points (deprecated - use CreateDonationByStringIDs)
 func (s *DonationService) CreateDonation(userID, foodID, marketID uint, quantity int, notes string) (*models.Donation, error) {
-	// Convert uint to uuid.UUID
-	foodUUID, err := uuid.Parse(fmt.Sprintf("%08d-0000-0000-0000-000000000000", foodID))
-	if err != nil {
-		return nil, errors.New("invalid food ID")
-	}
+	return nil, errors.New("deprecated: use CreateDonationByStringIDs with UUID strings")
+}
 
-	userUUID, err := uuid.Parse(fmt.Sprintf("%08d-0000-0000-0000-000000000000", userID))
+// CreateDonationByStringIDs creates a new donation using UUID strings
+func (s *DonationService) CreateDonationByStringIDs(userIDStr, foodIDStr string, marketID uint, quantity int, notes string) (*models.Donation, error) {
+	userID, err := uuid.Parse(userIDStr)
 	if err != nil {
 		return nil, errors.New("invalid user ID")
 	}
 
+	foodID, err := uuid.Parse(foodIDStr)
+	if err != nil {
+		return nil, errors.New("invalid food ID")
+	}
+
+	return s.CreateDonationWithUUID(userID, foodID, marketID, quantity, notes)
+}
+
+// CreateDonationWithUUID creates a new donation using UUID
+func (s *DonationService) CreateDonationWithUUID(userID uuid.UUID, foodID uuid.UUID, marketID uint, quantity int, notes string) (*models.Donation, error) {
 	// Validate food exists and user owns it
-	food, err := s.foodRepo.FindByID(foodUUID)
+	food, err := s.foodRepo.FindByID(foodID)
 	if err != nil {
 		return nil, errors.New("food not found")
 	}
 
-	if food.UserID != userUUID {
+	if food.UserID != userID {
 		return nil, errors.New("you don't own this food item")
 	}
 
@@ -102,7 +110,7 @@ func (s *DonationService) CreateDonation(userID, foodID, marketID uint, quantity
 	}
 
 	// Get or create user points
-	userPoints, err := s.rewardRepo.GetOrCreateUserPoints(userUUID)
+	userPoints, err := s.rewardRepo.GetOrCreateUserPoints(userID)
 	if err != nil {
 		return nil, err
 	}
@@ -132,14 +140,32 @@ func (s *DonationService) CreateDonation(userID, foodID, marketID uint, quantity
 	return donation, nil
 }
 
-// GetUserDonations retrieves all donations by a user
+// GetUserDonations retrieves all donations by a user (deprecated)
 func (s *DonationService) GetUserDonations(userID uint) ([]models.Donation, error) {
-	return s.donationRepo.GetDonationsByUserID(userID)
+	return nil, errors.New("deprecated: use GetUserDonationsByStringID")
+}
+
+// GetUserDonationsByStringID retrieves all donations by a user using UUID string
+func (s *DonationService) GetUserDonationsByStringID(userIDStr string) ([]models.Donation, error) {
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		return nil, errors.New("invalid user ID")
+	}
+	return s.donationRepo.GetDonationsByUserUUID(userID)
 }
 
 // GetDonationStats retrieves donation statistics
 func (s *DonationService) GetDonationStats(userID uint) (map[string]interface{}, error) {
-	return s.donationRepo.GetDonationStats(userID)
+	return nil, errors.New("deprecated: use GetDonationStatsByStringID")
+}
+
+// GetDonationStatsByStringID retrieves donation statistics using UUID string
+func (s *DonationService) GetDonationStatsByStringID(userIDStr string) (map[string]interface{}, error) {
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		return nil, errors.New("invalid user ID")
+	}
+	return s.donationRepo.GetDonationStatsByUUID(userID)
 }
 
 // UpdateDonationStatus updates donation status

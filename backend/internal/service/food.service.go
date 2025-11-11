@@ -27,6 +27,22 @@ type CreateFoodRequest struct {
 	AddMethod    string     `json:"add_method" binding:"required,oneof=manual scan barcode"`
 }
 
+type AddScannedFoodRequest struct {
+	Name         string     `json:"name" binding:"required"`
+	Category     string     `json:"category" binding:"required"`
+	Quantity     float64    `json:"quantity" binding:"required,gt=0"`
+	Unit         string     `json:"unit" binding:"required"`
+	ImageURL     *string    `json:"image_url"`
+	PurchaseDate *time.Time `json:"purchase_date"`
+	ExpiryDate   *time.Time `json:"expiry_date"`
+	Location     string     `json:"location" binding:"required"`
+	IsHalal      *bool      `json:"is_halal"`
+	Calories     *float64   `json:"calories"`
+	Protein      *float64   `json:"protein"`
+	Carbs        *float64   `json:"carbs"`
+	Fat          *float64   `json:"fat"`
+}
+
 type UpdateFoodRequest struct {
 	Name       *string    `json:"name"`
 	Category   *string    `json:"category"`
@@ -171,6 +187,41 @@ func (s *FoodService) GetUserFoods(userID uuid.UUID, page, limit int) ([]FoodRes
 	}
 
 	return responses, total, nil
+}
+
+// CheckDuplicateFood checks if food with same name already exists
+func (s *FoodService) CheckDuplicateFood(userID uuid.UUID, name string) ([]FoodResponse, error) {
+	foods, err := s.foodRepo.FindByNameExact(userID, name)
+	if err != nil {
+		return nil, err
+	}
+
+	responses := make([]FoodResponse, len(foods))
+	for i, food := range foods {
+		responses[i] = *s.toFoodResponse(&food)
+	}
+
+	return responses, nil
+}
+
+// UpdateFoodStock updates only the quantity (stock) of existing food
+func (s *FoodService) UpdateFoodStock(id uuid.UUID, additionalQuantity float64) (*FoodResponse, error) {
+	food, err := s.foodRepo.FindByID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	// Add to existing quantity
+	food.Quantity += additionalQuantity
+
+	if err := s.foodRepo.Update(food); err != nil {
+		return nil, err
+	}
+
+	// Award points for adding stock
+	s.awardPointsForFoodSave(food.UserID, food.ID)
+
+	return s.toFoodResponse(food), nil
 }
 
 // GetFoodsByCategory retrieves food items by category

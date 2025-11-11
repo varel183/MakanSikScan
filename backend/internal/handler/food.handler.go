@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -116,6 +117,11 @@ func (h *FoodHandler) GetUserFoods(c *gin.Context) {
 		return
 	}
 
+	fmt.Printf("📊 GetUserFoods: Found %d foods (total: %d)\n", len(foods), total)
+	if len(foods) > 0 {
+		fmt.Printf("📊 First food: %+v\n", foods[0])
+	}
+
 	c.JSON(http.StatusOK, utils.PaginatedSuccessResponse("Foods retrieved successfully", foods, page, limit, total))
 }
 
@@ -159,7 +165,7 @@ func (h *FoodHandler) GetFoodsByCategory(c *gin.Context) {
 // @Tags food
 // @Produce json
 // @Security BearerAuth
-// @Param days query int false "Days until expiry" default(7)
+// @Param days query int false "Days until expiry" default(3)
 // @Success 200 {object} utils.Response
 // @Router /api/v1/foods/expiring [get]
 func (h *FoodHandler) GetExpiringSoon(c *gin.Context) {
@@ -169,9 +175,9 @@ func (h *FoodHandler) GetExpiringSoon(c *gin.Context) {
 		return
 	}
 
-	days, _ := strconv.Atoi(c.DefaultQuery("days", "7"))
+	days, _ := strconv.Atoi(c.DefaultQuery("days", "3"))
 	if days < 1 {
-		days = 7
+		days = 3
 	}
 
 	foods, err := h.foodService.GetExpiringSoon(userID, days)
@@ -181,6 +187,30 @@ func (h *FoodHandler) GetExpiringSoon(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, utils.SuccessResponse("Expiring foods retrieved successfully", foods))
+}
+
+// GetDonatableFoods retrieves foods suitable for donation (expiring within 3 days)
+// @Summary Get donatable foods
+// @Tags food
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} utils.Response
+// @Router /api/v1/foods/donatable [get]
+func (h *FoodHandler) GetDonatableFoods(c *gin.Context) {
+	userID, err := middleware.GetUserID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, utils.ErrorResponse("Unauthorized"))
+		return
+	}
+
+	// Get foods expiring within 3 days
+	foods, err := h.foodService.GetExpiringSoon(userID, 3)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, utils.SuccessResponse("Donatable foods retrieved successfully", foods))
 }
 
 // GetExpired retrieves expired food items
@@ -313,6 +343,8 @@ func (h *FoodHandler) GetStatistics(c *gin.Context) {
 		return
 	}
 
+	fmt.Printf("📊 GetStatistics: %+v\n", stats)
+
 	c.JSON(http.StatusOK, utils.SuccessResponse("Statistics retrieved successfully", stats))
 }
 
@@ -361,7 +393,7 @@ func (h *FoodHandler) SearchFood(c *gin.Context) {
 // @Success 200 {object} utils.Response
 // @Router /api/v1/foods/scan [post]
 func (h *FoodHandler) ScanFood(c *gin.Context) {
-	userID, err := middleware.GetUserID(c)
+	_, err := middleware.GetUserID(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, utils.ErrorResponse("Unauthorized"))
 		return
@@ -378,28 +410,64 @@ func (h *FoodHandler) ScanFood(c *gin.Context) {
 		return
 	}
 
-	// Scan the food
+	// Scan the food (just analyze, don't save yet)
 	scanResult, err := h.scannerService.ScanFood(&req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(err.Error()))
 		return
 	}
 
+	// Debug logging
+	fmt.Printf("📊 Scan Result: %+v\n", scanResult)
+	fmt.Printf("📊 Name: %s, Category: %s, Confidence: %.2f\n", scanResult.Name, scanResult.Category, scanResult.Confidence)
+
+	// Return scan result WITHOUT saving to database
+	// Let the user decide to add it or not
+	c.JSON(http.StatusOK, utils.SuccessResponse("Food scanned successfully", scanResult))
+}
+
+// AddScannedFood adds scanned food to storage
+// @Summary Add scanned food to storage
+// @Tags food
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body service.AddScannedFoodRequest true "Add scanned food request"
+// @Success 201 {object} utils.Response
+// @Router /api/v1/foods/add-scanned [post]
+func (h *FoodHandler) AddScannedFood(c *gin.Context) {
+	userID, err := middleware.GetUserID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, utils.ErrorResponse("Unauthorized"))
+		return
+	}
+
+	var req service.AddScannedFoodRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(err.Error()))
+		return
+	}
+
+	if err := utils.ValidateStruct(&req); err != nil {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(err.Error()))
+		return
+	}
+
 	// Create food from scan result
 	createReq := &service.CreateFoodRequest{
-		Name:         scanResult.Name,
-		Category:     scanResult.Category,
-		Quantity:     1.0,
-		Unit:         "piece",
-		ImageURL:     &scanResult.ImageURL,
-		PurchaseDate: &scanResult.PurchaseDate,
-		ExpiryDate:   scanResult.ExpiryDate,
-		Location:     scanResult.Location,
-		IsHalal:      scanResult.IsHalal,
-		Calories:     scanResult.Calories,
-		Protein:      scanResult.Protein,
-		Carbs:        scanResult.Carbs,
-		Fat:          scanResult.Fat,
+		Name:         req.Name,
+		Category:     req.Category,
+		Quantity:     req.Quantity,
+		Unit:         req.Unit,
+		ImageURL:     req.ImageURL,
+		PurchaseDate: req.PurchaseDate,
+		ExpiryDate:   req.ExpiryDate,
+		Location:     req.Location,
+		IsHalal:      req.IsHalal,
+		Calories:     req.Calories,
+		Protein:      req.Protein,
+		Carbs:        req.Carbs,
+		Fat:          req.Fat,
 		AddMethod:    "scan",
 	}
 
@@ -409,10 +477,81 @@ func (h *FoodHandler) ScanFood(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, utils.SuccessResponse("Food scanned and added successfully", map[string]interface{}{
-		"food":       food,
-		"confidence": scanResult.Confidence,
+	c.JSON(http.StatusCreated, utils.SuccessResponse("Food added to storage successfully", food))
+}
+
+// CheckDuplicate checks if food with same name exists
+// @Summary Check duplicate food
+// @Tags food
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param name query string true "Food name"
+// @Success 200 {object} utils.Response
+// @Router /api/v1/foods/check-duplicate [get]
+func (h *FoodHandler) CheckDuplicate(c *gin.Context) {
+	userID, err := middleware.GetUserID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, utils.ErrorResponse("Unauthorized"))
+		return
+	}
+
+	name := c.Query("name")
+	if name == "" {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse("Name is required"))
+		return
+	}
+
+	duplicates, err := h.foodService.CheckDuplicateFood(userID, name)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(err.Error()))
+		return
+	}
+
+	fmt.Printf("📊 CheckDuplicate: Found %d items with name '%s'\n", len(duplicates), name)
+
+	c.JSON(http.StatusOK, utils.SuccessResponse("Duplicate check completed", gin.H{
+		"has_duplicates": len(duplicates) > 0,
+		"duplicates":     duplicates,
+		"count":          len(duplicates),
 	}))
+}
+
+// UpdateStock updates food stock (quantity only)
+// @Summary Update food stock
+// @Tags food
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Food ID"
+// @Param quantity body object true "Additional quantity"
+// @Success 200 {object} utils.Response
+// @Router /api/v1/foods/{id}/stock [patch]
+func (h *FoodHandler) UpdateStock(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse("Invalid food ID"))
+		return
+	}
+
+	var req struct {
+		Quantity float64 `json:"quantity" binding:"required,gt=0"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, utils.ErrorResponse(err.Error()))
+		return
+	}
+
+	food, err := h.foodService.UpdateFoodStock(id, req.Quantity)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(err.Error()))
+		return
+	}
+
+	fmt.Printf("📊 UpdateStock: Added %.2f to food %s (new quantity: %.2f)\n", req.Quantity, food.Name, food.Quantity)
+
+	c.JSON(http.StatusOK, utils.SuccessResponse("Stock updated successfully", food))
 }
 
 // SeedDummyFoods creates dummy food data for the authenticated user

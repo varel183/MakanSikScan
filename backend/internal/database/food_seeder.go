@@ -28,9 +28,9 @@ func SeedDummyFoodsForVarel() {
 	}
 
 	if err := SeedDummyFoods(user.ID); err != nil {
-		log.Printf("❌ Failed to seed foods: %v", err)
+		log.Printf("Failed to seed foods: %v", err)
 	} else {
-		log.Println("✅ Dummy foods seeded successfully for varel@gmail.com")
+		log.Println("Dummy foods seeded successfully for varel@gmail.com")
 	}
 }
 
@@ -196,16 +196,16 @@ func SeedDummyFoods(userUUID uuid.UUID) error {
 		if err := DB.Where("user_id = ? AND name = ?", userUUID, food.Name).First(&existing).Error; err != nil {
 			// Food doesn't exist, create it
 			if err := DB.Create(&food).Error; err != nil {
-				log.Printf("❌ Failed to seed food %s: %v", food.Name, err)
+				log.Printf("Failed to seed food %s: %v", food.Name, err)
 				return err
 			} else {
-				log.Printf("✅ Seeded food: %s", food.Name)
+				log.Printf("Seeded food: %s", food.Name)
 			}
 		} else {
 			log.Printf("⏭️  Food already exists: %s", food.Name)
 		}
 	}
 
-	log.Println("✅ Food items seeding completed")
+	log.Println("Food items seeding completed")
 	return nil
 }

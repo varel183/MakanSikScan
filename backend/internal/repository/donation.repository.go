@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"github.com/google/uuid"
 	"github.com/varel183/MakanSikScan/backend/internal/models"
 
 	"gorm.io/gorm"
@@ -41,6 +42,15 @@ func (r *DonationRepository) GetDonationsByUserID(userID uint) ([]models.Donatio
 	return donations, err
 }
 
+func (r *DonationRepository) GetDonationsByUserUUID(userID uuid.UUID) ([]models.Donation, error) {
+	var donations []models.Donation
+	err := r.db.Preload("Food").Preload("Market").
+		Where("user_id = ?", userID).
+		Order("created_at DESC").
+		Find(&donations).Error
+	return donations, err
+}
+
 func (r *DonationRepository) GetDonationByID(id uint) (*models.Donation, error) {
 	var donation models.Donation
 	err := r.db.Preload("Food").Preload("Market").Preload("User").
@@ -53,6 +63,20 @@ func (r *DonationRepository) UpdateDonationStatus(id uint, status string) error 
 }
 
 func (r *DonationRepository) GetDonationStats(userID uint) (map[string]interface{}, error) {
+	var totalDonations int64
+	var totalPoints int64
+
+	r.db.Model(&models.Donation{}).Where("user_id = ?", userID).Count(&totalDonations)
+	r.db.Model(&models.Donation{}).Where("user_id = ? AND status = ?", userID, "completed").
+		Select("COALESCE(SUM(points_earned), 0)").Scan(&totalPoints)
+
+	return map[string]interface{}{
+		"total_donations": totalDonations,
+		"total_points":    totalPoints,
+	}, nil
+}
+
+func (r *DonationRepository) GetDonationStatsByUUID(userID uuid.UUID) (map[string]interface{}, error) {
 	var totalDonations int64
 	var totalPoints int64
 

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, TextInput } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Alert, TextInput, ActivityIndicator } from "react-native";
+import { Edit3, Trash2, Save, X, MapPin, Calendar, TrendingUp } from "lucide-react-native";
 import apiService from "../../services/api";
 import { Food } from "../../types";
 import { COLORS, FOOD_CATEGORIES, LOCATIONS } from "../../constants";
@@ -99,16 +100,16 @@ export default function FoodDetailScreen({ route, navigation }: any) {
 
   if (loading) {
     return (
-      <View style={styles.centerContainer}>
-        <Text style={styles.loadingText}>Loading...</Text>
+      <View className="flex-1 justify-center items-center">
+        <ActivityIndicator size="large" color={COLORS.primary} />
       </View>
     );
   }
 
   if (!food) {
     return (
-      <View style={styles.centerContainer}>
-        <Text style={styles.errorText}>Food not found</Text>
+      <View className="flex-1 justify-center items-center">
+        <Text className="text-base text-red-500">Food not found</Text>
       </View>
     );
   }
@@ -117,54 +118,56 @@ export default function FoodDetailScreen({ route, navigation }: any) {
   const stockPercentage = getStockPercentage();
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.emoji}>🥗</Text>
+    <ScrollView className="flex-1 bg-gray-50">
+      <View className="bg-white p-6 items-center">
         {!isEditing ? (
           <>
-            <Text style={styles.name}>{food.name}</Text>
-            <View style={styles.badges}>
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{food.category}</Text>
+            <Text className="text-2xl font-bold text-gray-900 text-center mb-3">{food.name}</Text>
+            <View className="flex-row gap-2">
+              <View className="bg-gray-100 px-3 py-1 rounded-full">
+                <Text className="text-xs font-semibold text-gray-600">{food.category}</Text>
               </View>
               {food.is_halal && (
-                <View style={[styles.badge, { backgroundColor: "#E8F5E9" }]}>
-                  <Text style={[styles.badgeText, { color: COLORS.success }]}>Halal</Text>
+                <View className="bg-green-50 px-3 py-1 rounded-full">
+                  <Text className="text-xs font-semibold text-green-600">✓ Halal</Text>
                 </View>
               )}
             </View>
           </>
         ) : (
-          <>
-            <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="Food name" />
-          </>
+          <TextInput
+            className="bg-gray-100 border border-gray-300 rounded-lg p-3 text-base text-gray-900 w-full mt-2"
+            value={name}
+            onChangeText={setName}
+            placeholder="Food name"
+          />
         )}
       </View>
 
       {/* Stock Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Stock Status</Text>
-        <View style={styles.stockCard}>
+      <View className="bg-white p-5 mt-3">
+        <Text className="text-base font-semibold text-gray-900 mb-3">Stock Status</Text>
+        <View className="bg-gray-100 p-4 rounded-xl">
           {!isEditing ? (
             <>
-              <View style={styles.stockRow}>
-                <Text style={styles.stockLabel}>Current Quantity</Text>
-                <Text style={styles.stockValue}>
+              <View className="flex-row justify-between mb-2">
+                <Text className="text-sm text-gray-600">Current Quantity</Text>
+                <Text className="text-sm font-semibold text-gray-900">
                   {food.quantity} {food.unit}
                 </Text>
               </View>
-              <View style={styles.stockRow}>
-                <Text style={styles.stockLabel}>Initial Quantity</Text>
-                <Text style={styles.stockValue}>
+              <View className="flex-row justify-between mb-3">
+                <Text className="text-sm text-gray-600">Initial Quantity</Text>
+                <Text className="text-sm font-semibold text-gray-900">
                   {food.initial_quantity} {food.unit}
                 </Text>
               </View>
             </>
           ) : (
-            <View style={styles.editRow}>
-              <Text style={styles.label}>Quantity ({food.unit})</Text>
+            <View className="mb-3">
+              <Text className="text-sm font-medium text-gray-900 mb-2">Quantity ({food.unit})</Text>
               <TextInput
-                style={styles.inputSmall}
+                className="bg-white border border-gray-300 rounded-lg p-3 text-base text-gray-900"
                 value={quantity}
                 onChangeText={setQuantity}
                 keyboardType="decimal-pad"
@@ -173,37 +176,43 @@ export default function FoodDetailScreen({ route, navigation }: any) {
             </View>
           )}
 
-          <View style={styles.progressBar}>
+          <View className="h-2 bg-gray-200 rounded-full overflow-hidden mb-2">
             <View
-              style={[
-                styles.progressFill,
-                {
-                  width: `${stockPercentage}%`,
-                  backgroundColor: stockPercentage > 50 ? COLORS.success : COLORS.warning,
-                },
-              ]}
+              className="h-full rounded-full"
+              style={{
+                width: `${stockPercentage}%`,
+                backgroundColor: stockPercentage > 50 ? COLORS.success : COLORS.warning,
+              }}
             />
           </View>
-          <Text style={styles.progressText}>{stockPercentage}% remaining</Text>
+          <Text className="text-xs text-gray-600 text-center">{stockPercentage}% remaining</Text>
         </View>
       </View>
 
       {/* Location */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Storage Location</Text>
+      <View className="bg-white p-5 mt-3">
+        <Text className="text-base font-semibold text-gray-900 mb-3">Storage Location</Text>
         {!isEditing ? (
-          <View style={styles.locationCard}>
-            <Text style={styles.locationEmoji}>📍</Text>
-            <Text style={styles.locationText}>{food.location}</Text>
+          <View className="flex-row items-center bg-gray-100 p-4 rounded-xl">
+            <MapPin size={24} color={COLORS.primary} />
+            <Text className="text-base font-semibold text-gray-900 ml-3">{food.location}</Text>
           </View>
         ) : (
-          <View style={styles.pickerContainer}>
+          <View className="flex-row flex-wrap gap-2">
             {LOCATIONS.map((loc) => (
               <TouchableOpacity
                 key={loc}
-                style={[styles.locationOption, location === loc && styles.locationOptionSelected]}
+                className={`px-4 py-2 rounded-lg border ${location === loc ? "border-2" : "border"}`}
+                style={{
+                  backgroundColor: location === loc ? COLORS.primary : "#F3F4F6",
+                  borderColor: location === loc ? COLORS.primary : "#E5E7EB",
+                }}
                 onPress={() => setLocation(loc)}>
-                <Text style={[styles.locationOptionText, location === loc && styles.locationOptionTextSelected]}>{loc}</Text>
+                <Text
+                  className="text-sm font-medium"
+                  style={{ color: location === loc ? "#FFFFFF" : "#374151" }}>
+                  {loc}
+                </Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -212,13 +221,15 @@ export default function FoodDetailScreen({ route, navigation }: any) {
 
       {/* Expiry */}
       {food.expiry_date && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Expiry Information</Text>
-          <View style={[styles.expiryCard, { backgroundColor: expiryStatus.color + "20" }]}>
-            <Text style={styles.expiryEmoji}>📅</Text>
-            <View>
-              <Text style={[styles.expiryText, { color: expiryStatus.color }]}>{expiryStatus.text}</Text>
-              <Text style={styles.expiryDate}>
+        <View className="bg-white p-5 mt-3">
+          <Text className="text-base font-semibold text-gray-900 mb-3">Expiry Information</Text>
+          <View className="flex-row items-center p-4 rounded-xl" style={{ backgroundColor: expiryStatus.color + "20" }}>
+            <Calendar size={24} color={expiryStatus.color} />
+            <View className="ml-3">
+              <Text className="text-base font-semibold mb-1" style={{ color: expiryStatus.color }}>
+                {expiryStatus.text}
+              </Text>
+              <Text className="text-sm text-gray-600">
                 {new Date(food.expiry_date).toLocaleDateString("en-US", {
                   month: "long",
                   day: "numeric",
@@ -231,309 +242,65 @@ export default function FoodDetailScreen({ route, navigation }: any) {
       )}
 
       {/* Nutrition */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Nutrition Facts</Text>
-        <View style={styles.nutritionGrid}>
-          <View style={styles.nutritionItem}>
-            <Text style={styles.nutritionValue}>{food.calories}</Text>
-            <Text style={styles.nutritionLabel}>Calories</Text>
+      <View className="bg-white p-5 mt-3">
+        <Text className="text-base font-semibold text-gray-900 mb-3">Nutrition Facts</Text>
+        <View className="flex-row gap-3">
+          <View className="flex-1 bg-gray-100 p-3 rounded-lg items-center">
+            <Text className="text-xl font-bold" style={{ color: COLORS.primary }}>{food.calories}</Text>
+            <Text className="text-xs text-gray-600 mt-1">Calories</Text>
           </View>
-          <View style={styles.nutritionItem}>
-            <Text style={styles.nutritionValue}>{food.protein}g</Text>
-            <Text style={styles.nutritionLabel}>Protein</Text>
+          <View className="flex-1 bg-gray-100 p-3 rounded-lg items-center">
+            <Text className="text-xl font-bold" style={{ color: COLORS.primary }}>{food.protein}g</Text>
+            <Text className="text-xs text-gray-600 mt-1">Protein</Text>
           </View>
-          <View style={styles.nutritionItem}>
-            <Text style={styles.nutritionValue}>{food.carbs}g</Text>
-            <Text style={styles.nutritionLabel}>Carbs</Text>
+          <View className="flex-1 bg-gray-100 p-3 rounded-lg items-center">
+            <Text className="text-xl font-bold" style={{ color: COLORS.primary }}>{food.carbs}g</Text>
+            <Text className="text-xs text-gray-600 mt-1">Carbs</Text>
           </View>
-          <View style={styles.nutritionItem}>
-            <Text style={styles.nutritionValue}>{food.fat}g</Text>
-            <Text style={styles.nutritionLabel}>Fat</Text>
+          <View className="flex-1 bg-gray-100 p-3 rounded-lg items-center">
+            <Text className="text-xl font-bold" style={{ color: COLORS.primary }}>{food.fat}g</Text>
+            <Text className="text-xs text-gray-600 mt-1">Fat</Text>
           </View>
         </View>
       </View>
 
       {/* Actions */}
-      <View style={styles.actions}>
+      <View className="p-4 pb-6">
         {!isEditing ? (
-          <>
-            <TouchableOpacity style={styles.editButton} onPress={() => setIsEditing(true)}>
-              <Text style={styles.editButtonText}>✏️ Edit</Text>
+          <View className="flex-row gap-3">
+            <TouchableOpacity
+              className="flex-1 flex-row items-center justify-center py-3.5 rounded-xl"
+              style={{ backgroundColor: COLORS.primary }}
+              onPress={() => setIsEditing(true)}>
+              <Edit3 size={18} color="#FFFFFF" />
+              <Text className="text-white text-sm font-semibold ml-2">Edit</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
-              <Text style={styles.deleteButtonText}>🗑️ Delete</Text>
+            <TouchableOpacity
+              className="flex-1 flex-row items-center justify-center py-3.5 rounded-xl"
+              style={{ backgroundColor: COLORS.error }}
+              onPress={handleDelete}>
+              <Trash2 size={18} color="#FFFFFF" />
+              <Text className="text-white text-sm font-semibold ml-2">Delete</Text>
             </TouchableOpacity>
-          </>
+          </View>
         ) : (
-          <>
-            <TouchableOpacity style={styles.cancelButton} onPress={() => setIsEditing(false)}>
-              <Text style={styles.cancelButtonText}>Cancel</Text>
+          <View className="flex-row gap-3">
+            <TouchableOpacity
+              className="flex-1 flex-row items-center justify-center py-3.5 rounded-xl bg-gray-200"
+              onPress={() => setIsEditing(false)}>
+              <X size={18} color="#374151" />
+              <Text className="text-gray-900 text-sm font-semibold ml-2">Cancel</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-              <Text style={styles.saveButtonText}>💾 Save</Text>
+            <TouchableOpacity
+              className="flex-1 flex-row items-center justify-center py-3.5 rounded-xl"
+              style={{ backgroundColor: COLORS.primary }}
+              onPress={handleSave}>
+              <Save size={18} color="#FFFFFF" />
+              <Text className="text-white text-sm font-semibold ml-2">Save</Text>
             </TouchableOpacity>
-          </>
+          </View>
         )}
       </View>
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  loadingText: {
-    fontSize: 16,
-    color: COLORS.textSecondary,
-  },
-  errorText: {
-    fontSize: 16,
-    color: COLORS.error,
-  },
-  header: {
-    backgroundColor: "#FFFFFF",
-    padding: 24,
-    alignItems: "center",
-  },
-  emoji: {
-    fontSize: 64,
-    marginBottom: 16,
-  },
-  name: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: COLORS.text,
-    textAlign: "center",
-    marginBottom: 12,
-  },
-  badges: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  badge: {
-    backgroundColor: COLORS.card,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  badgeText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: COLORS.textSecondary,
-  },
-  section: {
-    backgroundColor: "#FFFFFF",
-    padding: 20,
-    marginTop: 12,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: COLORS.text,
-    marginBottom: 12,
-  },
-  stockCard: {
-    backgroundColor: COLORS.card,
-    padding: 16,
-    borderRadius: 12,
-  },
-  stockRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 8,
-  },
-  stockLabel: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-  },
-  stockValue: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: COLORS.text,
-  },
-  progressBar: {
-    height: 8,
-    backgroundColor: "#E0E0E0",
-    borderRadius: 4,
-    marginTop: 12,
-    overflow: "hidden",
-  },
-  progressFill: {
-    height: "100%",
-    borderRadius: 4,
-  },
-  progressText: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    textAlign: "center",
-    marginTop: 8,
-  },
-  locationCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: COLORS.card,
-    padding: 16,
-    borderRadius: 12,
-  },
-  locationEmoji: {
-    fontSize: 24,
-    marginRight: 12,
-  },
-  locationText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: COLORS.text,
-  },
-  expiryCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 16,
-    borderRadius: 12,
-  },
-  expiryEmoji: {
-    fontSize: 24,
-    marginRight: 12,
-  },
-  expiryText: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 4,
-  },
-  expiryDate: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-  },
-  nutritionGrid: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  nutritionItem: {
-    flex: 1,
-    backgroundColor: COLORS.card,
-    padding: 16,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  nutritionValue: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: COLORS.primary,
-    marginBottom: 4,
-  },
-  nutritionLabel: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-  },
-  actions: {
-    flexDirection: "row",
-    gap: 12,
-    padding: 20,
-  },
-  editButton: {
-    flex: 1,
-    backgroundColor: COLORS.primary,
-    padding: 16,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  editButtonText: {
-    color: "#FFFFFF",
-    fontWeight: "600",
-    fontSize: 16,
-  },
-  deleteButton: {
-    flex: 1,
-    backgroundColor: COLORS.error,
-    padding: 16,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  deleteButtonText: {
-    color: "#FFFFFF",
-    fontWeight: "600",
-    fontSize: 16,
-  },
-  input: {
-    backgroundColor: COLORS.card,
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    width: "100%",
-    marginVertical: 8,
-  },
-  editRow: {
-    marginBottom: 12,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: COLORS.text,
-    marginBottom: 8,
-  },
-  inputSmall: {
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-  },
-  pickerContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  locationOption: {
-    backgroundColor: COLORS.card,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
-  },
-  locationOptionSelected: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
-  },
-  locationOptionText: {
-    fontSize: 14,
-    color: COLORS.text,
-  },
-  locationOptionTextSelected: {
-    color: "#FFFFFF",
-    fontWeight: "600",
-  },
-  cancelButton: {
-    flex: 1,
-    backgroundColor: COLORS.card,
-    padding: 16,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  cancelButtonText: {
-    color: COLORS.textSecondary,
-    fontWeight: "600",
-    fontSize: 16,
-  },
-  saveButton: {
-    flex: 1,
-    backgroundColor: COLORS.primary,
-    padding: 16,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  saveButtonText: {
-    color: "#FFFFFF",
-    fontWeight: "600",
-    fontSize: 16,
-  },
-});
